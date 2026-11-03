@@ -1,0 +1,54 @@
+{
+  "_info": "Farben als Hex (#RRGGBB oder #RRGGBBAA). Nach dem Aendern: python3 build.py",
+
+  "crown": {
+    "gold_light": "#FFE66B",
+    "gold": "#F2B623",
+    "gold_dark": "#A86A12",
+    "gems": ["#E0263C", "#2E7BFF", "#29D16A"]
+  },
+
+  "wings": {
+    "top": "#3A1466",
+    "middle": "#8E3FE0",
+    "tip": "#E7C6FF",
+    "feather_line": "#24093F"
+  },
+
+  "shield": {
+    "field": "#2B1150",
+    "field_light": "#4B2387",
+    "border": "#F2B623",
+    "border_dark": "#A86A12",
+    "gem": "#B45CFF",
+    "gem_light": "#F1DBFF",
+    "handle": "#5A3A1E"
+  },
+
+  "swords": {
+    "wooden_sword":    {"blade": "#FFC85A", "blade_dark": "#C7841C", "guard": "#7A4A22", "handle": "#4E2E14", "gem": "#FF8A1E"},
+    "stone_sword":     {"blade": "#7CF2A6", "blade_dark": "#1E9E57", "guard": "#6E6E6E", "handle": "#3E3E3E", "gem": "#29D16A"},
+    "iron_sword":      {"blade": "#8FC4FF", "blade_dark": "#2E62C9", "guard": "#D8D8D8", "handle": "#4A4A55", "gem": "#2E7BFF"},
+    "golden_sword":    {"blade": "#FFF08A", "blade_dark": "#E0A520", "guard": "#A86A12", "handle": "#5A2A10", "gem": "#E0263C"},
+    "diamond_sword":   {"blade": "#B6FFF8", "blade_dark": "#2CC7C0", "guard": "#F2B623", "handle": "#2B1150", "gem": "#E0263C"},
+    "netherite_sword": {"blade": "#E2B8FF", "blade_dark": "#7A2FCF", "guard": "#2A2228", "handle": "#140F14", "gem": "#B45CFF"}
+  },
+
+  "low_fire": {
+    "_info": "Hoehe der Flammen in Pixeln (von 16). Vanilla ~16, Low Fire typisch 4-7.",
+    "height": 6
+  },
+
+  "low_shield": {
+    "_info": "Wie weit das Schild in der 1st-Person nach unten rutscht (Vanilla = 0).",
+    "offset_down": 5
+  },
+
+  "hotbars": {
+    "amethyst": {"bg": "#1A0B2ECC", "slot": "#2B1150CC", "border": "#B45CFF", "border_dark": "#5A2A99", "select": "#F1DBFF", "select_dark": "#B45CFF"},
+    "gold":     {"bg": "#2A1A05CC", "slot": "#3B2A0ACC", "border": "#F2B623", "border_dark": "#A86A12", "select": "#FFF6B0", "select_dark": "#F2B623"},
+    "emerald":  {"bg": "#05200FCC", "slot": "#0A3319CC", "border": "#29D16A", "border_dark": "#137A3B", "select": "#C9FFDD", "select_dark": "#29D16A"},
+    "ruby":     {"bg": "#26050ACC", "slot": "#3D0A12CC", "border": "#E0263C", "border_dark": "#871221", "select": "#FFD0D6", "select_dark": "#E0263C"},
+    "glass":    {"bg": "#00000040", "slot": "#00000030", "border": "#FFFFFF80", "border_dark": "#00000060", "select": "#FFFFFF", "select_dark": "#FFFFFFA0"}
+  }
+}
