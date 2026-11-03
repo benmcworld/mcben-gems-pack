@@ -9,6 +9,7 @@ from galaxy import fbm
 
 OUT = Path(__file__).parent / "hud"
 R = 2  # Hotbar-Aufloesung (2x = 364x44)
+ALPHA_MIN, ALPHA_MAX = 95, 190  # Durchsichtigkeit des Hotbar-Hintergrunds (0-255)
 
 
 def hexc(h, a=255):
@@ -125,8 +126,13 @@ def hotbar(t):
     bar.alpha_composite(solid((W, H), hexc(t["border"]), border))
     bar.alpha_composite(solid((W, H), hexc(t["border_light"]), ring(W, H, rad, R // 2, R)))
     bar.alpha_composite(solid((W, H), hexc(t["border_dark"]), ring(W, H, rad, 0, 1)))
+    # Durchsichtigkeit: dunkle Nebelstellen durchsichtiger, helle Wolken + Rand deckender
+    lum = neb.convert("L").point(lambda v: int(ALPHA_MIN + (ALPHA_MAX - ALPHA_MIN) * min(1, v / 140)))
+    edge = ring(W, H, rad, 0, 2 * R).filter(ImageFilter.MaxFilter(3))
+    a = ImageChops.lighter(lum, edge)
+    a = ImageChops.lighter(a, glow(border, (0, 0, 0, 255), 2 * R, full).split()[3].point(lambda v: min(255, v * 2)))
     bar = bar.quantize(64, method=Image.Quantize.FASTOCTREE).convert("RGBA")
-    bar.putalpha(full)
+    bar.putalpha(ImageChops.multiply(a, full))
 
     # Auswahl: eckig (nur 1px abgeschraegte Ecken), dicker Rahmen, Leuchten nach innen
     sw, sh = 24 * R, 23 * R
