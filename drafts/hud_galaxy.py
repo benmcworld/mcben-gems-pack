@@ -99,6 +99,8 @@ def ring(w, h, r, inset, thick):
 
 def solid(size, col, mask):
     i = Image.new("RGBA", size, col)
+    if len(col) > 3 and col[3] < 255:
+        mask = mask.point(lambda v: v * col[3] // 255)
     i.putalpha(mask)
     return i
 

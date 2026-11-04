@@ -153,7 +153,7 @@ def cmap(t):
         "O": t["icon_line"], "F": t["icon"], "L": t["icon_light"], "D": t["icon_dark"], "W": "#FFFFFF",
         "N": t["nebula"][2], "P": t["icon"], "S": "#FFFFFF", "B": t["bone"],
         "G": "#F5C518", "g": "#FFF08A", "d": "#B07A0A", "T": "#6B4A1E", "V": "#3FBF4A",
-        "E": t["icon_light"],
+        "E": t["icon_light"], "Y": t["icon_light"],
     }
 
 
@@ -170,7 +170,7 @@ def draw(shape, t, part="full", split=4):
     img = Image.new("RGBA", (9, 9))
     for y, row in enumerate(shape):
         for x, c in enumerate(row):
-            if c == "." or c in "TVE" and part in ("empty", "half_r"):
+            if c == "." or c in "TVEY" and part in ("empty", "half_r"):
                 continue
             col = cm[c]
             if part == "empty" or (part == "half_r" and x > split):
