@@ -115,21 +115,26 @@ def glow(mask, col, blur, clip=None):
 # --------------------------------------------------------------------------- #
 # Hotbar + Auswahl
 # --------------------------------------------------------------------------- #
-def hotbar(t):
+def hotbar(t, bg=None):
+    """bg: optionale Funktion (W, H, t) -> (Bild, Alpha-Maske) fuer den Hintergrund."""
     W, H = 182 * R, 22 * R
     rad = 3 * R
     full = rmask(W, H, rad)
     bar = Image.new("RGBA", (W, H))
-    neb = nebula(W, H, t, 21)
-    neb.putalpha(ImageChops.multiply(full, Image.new("L", (W, H), 235)))
-    bar.alpha_composite(neb)
+    if bg is None:
+        neb = nebula(W, H, t, 21)
+        lum = neb.convert("L").point(lambda v: int(ALPHA_MIN + (ALPHA_MAX - ALPHA_MIN) * min(1, v / 140)))
+    else:
+        neb, lum = bg(W, H, t)
+    layer = neb.convert("RGBA")
+    layer.putalpha(ImageChops.multiply(full, Image.new("L", (W, H), 235)))
+    bar.alpha_composite(layer)
     border = ring(W, H, rad, 0, 2 * R)
     bar.alpha_composite(glow(border, hexc(t["border_glow"], 150), 2 * R, full))
     bar.alpha_composite(solid((W, H), hexc(t["border"]), border))
     bar.alpha_composite(solid((W, H), hexc(t["border_light"]), ring(W, H, rad, R // 2, R)))
     bar.alpha_composite(solid((W, H), hexc(t["border_dark"]), ring(W, H, rad, 0, 1)))
     # Durchsichtigkeit: dunkle Nebelstellen durchsichtiger, helle Wolken + Rand deckender
-    lum = neb.convert("L").point(lambda v: int(ALPHA_MIN + (ALPHA_MAX - ALPHA_MIN) * min(1, v / 140)))
     edge = ring(W, H, rad, 0, 2 * R).filter(ImageFilter.MaxFilter(3))
     a = ImageChops.lighter(lum, edge)
     a = ImageChops.lighter(a, glow(border, (0, 0, 0, 255), 2 * R, full).split()[3].point(lambda v: min(255, v * 2)))

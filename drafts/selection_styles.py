@@ -142,8 +142,8 @@ SHIELDS = {
 }
 
 
-def hud_mock(t, sel, shield, scale=3, title=""):
-    bar, _ = hotbar(t)
+def hud_mock(t, sel, shield, scale=3, title="", bg=None):
+    bar, _ = hotbar(t, bg)
     xb, xprog = xp(t)
     W, H = 182 * scale + 40, 60 * scale
     bg = world_bg(W, H, scale)
