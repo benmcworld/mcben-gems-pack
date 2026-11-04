@@ -10,7 +10,7 @@ Die fertigen Packs liegen in [`dist/`](dist/).
 
 | Pack | Was es macht |
 |------|--------------|
-| `McBen-HUD-Lila.zip` / `-Schwarz-Weiss` / `-Blau` / `-Rot` / `-Gruen` | Galaxy-HUD: Hotbar (Verlauf, halb durchsichtig), leuchtende Auswahl, runde Herzen, Schild-Rüstung, Äpfel als Hunger, XP-Leiste. **Nur eine Farbe gleichzeitig aktivieren.** |
+| `McBen-HUD-Lila.zip` / `-Schwarz-Weiss` / `-Blau` / `-Rot` / `-Gruen` | Galaxy-HUD: Hotbar (Verlauf, halb durchsichtig), leuchtende Auswahl, runde Herzen, runde Rüstung, Äpfel als Hunger, Galaxie-XP-Leiste. **Nur eine Farbe gleichzeitig aktivieren.** |
 | `McBen-LowFire.zip` | Feuer nur noch ~6/16 hoch |
 | `McBen-LowShield.zip` | Schild sitzt in der 1st-Person tiefer |
 

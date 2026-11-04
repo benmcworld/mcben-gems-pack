@@ -2,7 +2,8 @@
 
 Auswahl (vom User bestaetigt):
   Hotbar-Hintergrund 4 "Verlauf" | Auswahl-Rahmen 2 "Gefuellt + Glow"
-  Herzen 5 "Rund" | Ruestung "1 Schild" | Hunger 4 "Apfel (Farbe)"
+  Herzen 5 "Rund" | Ruestung rund 1 "Runde Brustplatte" | Hunger 4 "Apfel (Farbe)"
+  XP-Leiste 3 "Galaxie"
 """
 import sys
 from pathlib import Path
@@ -17,7 +18,8 @@ CHOICE = {
     "background": bg_verlauf,
     "selection": s_gefuellt,
     "heart": HEARTS["5 Rund"],
-    "armor": SHIELDS["1 Schild (bisher)"],
+    "armor": "1 Runde Brustplatte",   # aus xp_armor_designs.ARMOR_ROUND
+    "xp": "3 Galaxie",                # aus xp_armor_designs.XPS
     "food": FOOD["4 Apfel (Farbe)"],
 }
 
@@ -47,7 +49,8 @@ def hud_sprites(theme):
     bar, _ = hotbar(t, CHOICE["background"])
     out["hotbar.png"] = bar
     out["hotbar_selection.png"] = CHOICE["selection"](t)
-    xb, xprog = xp(t)
+    from xp_armor_designs import XPS, ARMOR_ROUND   # lazy: vermeidet Zirkel-Import
+    xb, xprog = XPS[CHOICE["xp"]](t)
     out["experience_bar_background.png"] = xb
     out["experience_bar_progress.png"] = xprog
 
@@ -70,10 +73,10 @@ def hud_sprites(theme):
     out["heart/vehicle_half.png"] = draw(heart, t, "half")
 
     # Ruestung
-    armor = CHOICE["armor"]
-    out["armor_full.png"] = draw(armor, t, "full", split=3)
-    out["armor_half.png"] = draw(armor, t, "half_r", split=3)
-    out["armor_empty.png"] = draw(armor, t, "empty", split=3)
+    armor = ARMOR_ROUND[CHOICE["armor"]]
+    out["armor_full.png"] = draw(armor, t, "full", split=4)
+    out["armor_half.png"] = draw(armor, t, "half_r", split=4)
+    out["armor_empty.png"] = draw(armor, t, "empty", split=4)
 
     # Hunger (+ gruene Variante bei Hunger-Effekt)
     food = CHOICE["food"]
