@@ -1,0 +1,734 @@
+<title>McBen Cosmetics Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: Buehne (3D) links gross, Auswahl-Panel rechts; auf dem Handy untereinander. Einheitlich dunkler Look. */
+:root{
+  --bg:#08050e; --panel:#120c1d; --panel-2:#1a1228; --line:#2c2140; --text:#efe8fa; --muted:#9a8cb3;
+  --accent:#c45cff; --accent-2:#ff6cf5;
+  --font-display:"Sora", "Segoe UI", system-ui, sans-serif; --font-body:"Inter", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px}
+#app{height:100%;display:flex;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px;gap:12px;box-sizing:border-box}
+header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:.2px}
+header h1 b{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+header p{margin:0;color:var(--muted);font-size:13px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px}
+#stage{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#000;min-height:320px}
+#stage canvas{width:100%!important;height:100%!important;display:block;touch-action:none}
+#label{position:absolute;left:16px;top:14px;pointer-events:none}
+#label small{color:var(--muted);font-size:12px;letter-spacing:1px;text-transform:uppercase}
+#label div{font-family:var(--font-display);font-size:22px;font-weight:700;margin-top:2px}
+#hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);font-size:12px;color:var(--muted);background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:999px;padding:6px 14px;white-space:nowrap}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:16px;overflow:auto;min-width:0}
+h2{margin:0;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button,.variants button{font:inherit;color:var(--text);background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:linear-gradient(90deg,var(--accent),var(--accent-2));border-color:transparent;font-weight:700}
+.variants{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.variants button{text-align:left;padding:10px 12px;line-height:1.25}
+.variants button small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.variants button[aria-pressed="true"]{border:2px solid var(--accent);box-shadow:0 0 14px rgba(196,92,255,.45);padding:9px 11px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{width:34px;height:34px;border-radius:10px;border:2px solid transparent;cursor:pointer}
+.chips button[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 10px rgba(255,255,255,.5)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.row label{cursor:pointer}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px}
+.note{color:var(--muted);font-size:12px;line-height:1.5;margin:0}
+body.shot #app{padding:0}body.shot header,body.shot aside,body.shot #hint,body.shot #label{display:none}
+body.shot main{display:block}body.shot #stage{border:0;border-radius:0;position:fixed;inset:0}
+@media (max-width:820px){main{grid-template-columns:1fr;grid-template-rows:minmax(320px,55vh) auto}#app{height:auto;min-height:100%}}
+@media (prefers-reduced-motion:reduce){#hint{display:none}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sora:wght@600;700&display=swap">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+
+<div id="app">
+  <header><h1><b>McBen</b> Cosmetics Studio</h1><p>Entwurf · Ziehen zum Drehen, Mausrad/zwei Finger zum Zoomen</p></header>
+  <main>
+    <div id="stage"><div id="label"><small id="lblCat">Flügel</small><div id="lblName">–</div></div><div id="hint">⟲ Ziehen zum Drehen</div></div>
+    <aside>
+      <section><h2>Kategorie</h2><div class="tabs" id="tabs"></div></section>
+      <section><h2>Variante</h2><div class="variants" id="variants"></div></section>
+      <section><h2>Farbe</h2><div class="chips" id="chips"></div></section>
+      <section>
+        <h2>Ansicht</h2>
+        <div class="row"><label for="optPlayer">Spieler anzeigen</label><input type="checkbox" id="optPlayer" checked></div>
+        <div class="row"><label for="optSpin">Automatisch drehen</label><input type="checkbox" id="optSpin" checked></div>
+        <div class="row"><label for="optAnim">Animation</label><input type="checkbox" id="optAnim" checked></div>
+      </section>
+      <p class="note">Platzhalter-Skin. In der Mod nimmt das Plushie automatisch deinen eigenen Skin.</p>
+    </aside>
+  </main>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// ============================================================ Themes
+const THEMES = {
+  lila:  {name:'Lila',  deep:'#08030f', body:'#16072c', mid:'#3a1270', main:'#a03cf0', vein:'#d45cff', tip:'#ff6cf5', edge:'#f0b8ff', light:'#ffd6ff', bg:'#07030f', chip:'linear-gradient(135deg,#7a2ae0,#ff6cf5)'},
+  gruen: {name:'Grün',  deep:'#020a05', body:'#06200f', mid:'#0d4a24', main:'#22c55e', vein:'#4dff6a', tip:'#b0ff8a', edge:'#c8ffd4', light:'#e6ffe9', bg:'#020a05', chip:'linear-gradient(135deg,#0f6a30,#7fffb0)'},
+  blau:  {name:'Blau',  deep:'#02060f', body:'#04122a', mid:'#0f2f66', main:'#2f7cf0', vein:'#4fc8ff', tip:'#8fe8ff', edge:'#c0ecff', light:'#e0f6ff', bg:'#02060f', chip:'linear-gradient(135deg,#0f3fa0,#7fe0ff)'},
+  rot:   {name:'Rot',   deep:'#0a0203', body:'#2a0408', mid:'#5a0d18', main:'#e0263c', vein:'#ff4d5e', tip:'#ffa06c', edge:'#ffc0c8', light:'#ffe0e4', bg:'#0a0203', chip:'linear-gradient(135deg,#7a0f20,#ff6c80)'},
+  weiss: {name:'Dark Edition', deep:'#030304', body:'#121216', mid:'#2a2a33', main:'#9a9aa8', vein:'#ffffff', tip:'#ffffff', edge:'#ffffff', light:'#ffffff', bg:'#040405', chip:'linear-gradient(135deg,#111,#eee)'},
+  gold:  {name:'Gold',  deep:'#0a0702', body:'#2a1c04', mid:'#5a3c0a', main:'#e0a020', vein:'#ffd04d', tip:'#fff0a0', edge:'#fff2c0', light:'#fff8e0', bg:'#0a0702', chip:'linear-gradient(135deg,#8a5a0a,#ffe08a)'},
+};
+let T = THEMES.lila;
+
+// ============================================================ Helfer
+const px = 1 / 16;
+function rnd(seed) { let s = seed % 2147483647; if (s <= 0) s += 2147483646; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+const cache = new Map();
+function cached(key, fn) { const k = key + '|' + T.name; if (!cache.has(k)) cache.set(k, fn()); return cache.get(k); }
+function canvasTex(c, opts = {}) {
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  if (opts.repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+  if (opts.nearest) { t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; }
+  t.anisotropy = 4; return t;
+}
+function hexA(hex, a) { const c = new THREE.Color(hex); return `rgba(${c.r * 255 | 0},${c.g * 255 | 0},${c.b * 255 | 0},${a})`; }
+
+// ---------- Texturen ----------
+function veinCanvas(seed, n = 26, size = 256, color = null) {
+  const r = rnd(seed); const pts = [];
+  for (let i = 0; i < n; i++) pts.push([r() * size, r() * size]);
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d'); const img = g.createImageData(size, size);
+  const vc = new THREE.Color(color || T.vein);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    let d1 = 1e9, d2 = 1e9;
+    for (const [qx, qy] of pts) for (const ox of [-size, 0, size]) for (const oy of [-size, 0, size]) {
+      const dx = x - qx - ox, dy = y - qy - oy, d = dx * dx + dy * dy;
+      if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+    }
+    const e = Math.sqrt(d2) - Math.sqrt(d1);
+    const v = Math.exp(-e / 1.6) + 0.35 * Math.exp(-e / 7);
+    const i = (y * size + x) * 4, w = Math.max(0, v - 1) * 150;
+    img.data[i] = Math.min(255, vc.r * 255 * v + w); img.data[i + 1] = Math.min(255, vc.g * 255 * v + w);
+    img.data[i + 2] = Math.min(255, vc.b * 255 * v + w); img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0); return c;
+}
+const veinTex = (seed, rep = 1) => cached('vein' + seed + 'r' + rep, () => { const t = canvasTex(veinCanvas(seed), {repeat: true}); t.repeat.set(rep, rep); return t; });
+
+function nebula(g, w, h, seed, strength = 1) {
+  const r = rnd(seed);
+  g.fillStyle = T.deep; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 70; i++) {
+    const x = r() * w, y = r() * h, rad = (0.08 + r() * 0.3) * Math.max(w, h);
+    const col = [T.mid, T.main, T.vein, T.body][i % 4];
+    const rg = g.createRadialGradient(x, y, 0, x, y, rad);
+    rg.addColorStop(0, hexA(col, (0.16 + r() * 0.22) * strength)); rg.addColorStop(1, hexA(col, 0));
+    g.fillStyle = rg; g.fillRect(0, 0, w, h);
+  }
+}
+function stars(g, w, h, seed, n = 90, big = 6) {
+  const r = rnd(seed);
+  for (let i = 0; i < n; i++) {
+    const x = r() * w, y = r() * h, s = r() < .15 ? 2 : 1;
+    g.fillStyle = r() < .7 ? '#ffffff' : T.light; g.beginPath(); g.arc(x, y, s, 0, 7); g.fill();
+  }
+  for (let i = 0; i < big; i++) sparkle(g, r() * w, r() * h, 6 + r() * 10);
+}
+function sparkle(g, x, y, s) {
+  const rg = g.createRadialGradient(x, y, 0, x, y, s * 1.6);
+  rg.addColorStop(0, 'rgba(255,255,255,.9)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = rg; g.fillRect(x - s * 2, y - s * 2, s * 4, s * 4);
+  g.fillStyle = '#fff'; g.beginPath();
+  g.moveTo(x, y - s); g.lineTo(x + s * .2, y - s * .2); g.lineTo(x + s, y); g.lineTo(x + s * .2, y + s * .2);
+  g.lineTo(x, y + s); g.lineTo(x - s * .2, y + s * .2); g.lineTo(x - s, y); g.lineTo(x - s * .2, y - s * .2); g.fill();
+}
+function galaxyCanvas(seed, w = 512, h = 512, paint = null) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+  nebula(g, w, h, seed); stars(g, w, h, seed + 1, Math.round(w * h / 2600), 5);
+  if (paint) paint(g, w, h);
+  return c;
+}
+const galaxyTex = (seed, w, h, paint, key = '') => cached('gal' + seed + key + w + 'x' + h, () => canvasTex(galaxyCanvas(seed, w, h, paint)));
+
+// ---------- Materialien ----------
+function crystalMat(seed, glow = 1.6, rep = 1) {
+  return new THREE.MeshPhysicalMaterial({color: T.body, emissive: 0xffffff, emissiveMap: veinTex(seed % 3, rep), emissiveIntensity: glow,
+    roughness: .12, metalness: .2, clearcoat: 1, transparent: true, opacity: .93, flatShading: true, side: THREE.DoubleSide});
+}
+const glowMat = (col, k = 2) => new THREE.MeshStandardMaterial({color: col, emissive: col, emissiveIntensity: k, roughness: .3});
+function galaxyMat(tex, glow = .55, extra = {}) {
+  return new THREE.MeshStandardMaterial({map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: glow, roughness: .35, metalness: .2, ...extra});
+}
+const goldMat = () => new THREE.MeshStandardMaterial({color: '#e8b23a', metalness: 1, roughness: .25, emissive: '#3a2400', emissiveIntensity: .4});
+
+// ---------- Kristallsplitter ----------
+function shard(len, rad, seed, glow = 1.6, sides = 5) {
+  const r = rnd(seed + 7);
+  const geo = new THREE.ConeGeometry(rad, len, sides, 3);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const y = p.getY(i);
+    if (y < len / 2 - 1e-3) { p.setX(i, p.getX(i) * (0.75 + r() * .5)); p.setZ(i, p.getZ(i) * (0.4 + r() * .2)); p.setY(i, y + (r() - .5) * len * .05); }
+  }
+  geo.translate(0, len / 2, 0); geo.computeVertexNormals();
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(geo, crystalMat(seed, glow)));
+  g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), new THREE.LineBasicMaterial({color: T.edge, transparent: true, opacity: .5})));
+  return g;
+}
+
+// ---------- Federn ----------
+function featherCanvas(seed, angel = false) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 512; const g = c.getContext('2d'); const r = rnd(seed);
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  if (angel) { grad.addColorStop(0, '#d8d0e6'); grad.addColorStop(.6, '#ffffff'); grad.addColorStop(1, T.light); }
+  else { grad.addColorStop(0, T.deep); grad.addColorStop(.35, T.mid); grad.addColorStop(.75, T.main); grad.addColorStop(1, T.tip); }
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 512);
+  for (let i = 0; i < 36; i++) {
+    const x = r() * 128, y = r() * 512, rad = 20 + r() * 60, rg = g.createRadialGradient(x, y, 0, x, y, rad);
+    rg.addColorStop(0, angel ? 'rgba(200,190,230,.25)' : hexA(r() < .5 ? T.main : T.deep, .45)); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, 128, 512);
+  }
+  g.strokeStyle = angel ? 'rgba(150,140,180,.6)' : hexA(T.light, .45); g.lineWidth = 2;
+  g.beginPath(); g.moveTo(64, 0); g.lineTo(64, 470); g.stroke();
+  g.strokeStyle = angel ? 'rgba(150,140,180,.25)' : hexA(T.light, .18); g.lineWidth = 1;
+  for (let y = 20; y < 480; y += 9) { g.beginPath(); g.moveTo(64, y); g.lineTo(4, y + 26); g.moveTo(64, y); g.lineTo(124, y + 26); g.stroke(); }
+  if (!angel) for (let i = 0; i < 16; i++) { g.fillStyle = '#fff'; g.beginPath(); g.arc(10 + r() * 108, 60 + r() * 440, r() < .2 ? 3 : 1.5, 0, 7); g.fill(); }
+  return c;
+}
+function featherGlowCanvas(seed) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 512; const g = c.getContext('2d'); const r = rnd(seed + 99);
+  const grad = g.createLinearGradient(0, 0, 0, 512); grad.addColorStop(0, '#000'); grad.addColorStop(.6, '#000'); grad.addColorStop(1, T.tip);
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 512);
+  for (let i = 0; i < 10; i++) { g.fillStyle = '#fff'; g.beginPath(); g.arc(10 + r() * 108, 60 + r() * 440, 2.5, 0, 7); g.fill(); }
+  return c;
+}
+function featherShape(len, wid) {
+  const s = new THREE.Shape();
+  s.moveTo(-wid * .18, 0);
+  s.bezierCurveTo(-wid * .55, -len * .15, -wid * .55, -len * .65, -wid * .2, -len * .95);
+  s.quadraticCurveTo(0, -len * 1.04, wid * .2, -len * .95);
+  s.bezierCurveTo(wid * .55, -len * .65, wid * .55, -len * .15, wid * .18, 0);
+  s.lineTo(-wid * .18, 0); return s;
+}
+function featherGeo(len, wid) {
+  const geo = new THREE.ExtrudeGeometry(featherShape(len, wid), {depth: .012, bevelEnabled: true, bevelThickness: .012, bevelSize: .01, bevelSegments: 2, curveSegments: 10});
+  const pos = geo.attributes.position, uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) { uv.setXY(i, pos.getX(i) / (wid * 1.2) + .5, 1 + pos.getY(i) / len); pos.setZ(i, pos.getZ(i) - .006 - .12 * pos.getY(i) * pos.getY(i)); }
+  geo.computeVertexNormals(); return geo;
+}
+function featherMesh(len, wid, seed, glow, style) {
+  if (style === 'neon') {
+    const pts = featherShape(len, wid).getPoints(40).map(p => new THREE.Vector3(p.x, p.y, -.12 * p.y * p.y));
+    const g = new THREE.Group();
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color: T.tip})));
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -len * .85, -.12 * len * len * .7)]), new THREE.LineBasicMaterial({color: T.vein, transparent: true, opacity: .6})));
+    const fill = new THREE.Mesh(featherGeo(len, wid), new THREE.MeshBasicMaterial({color: T.main, transparent: true, opacity: .12, side: THREE.DoubleSide, depthWrite: false}));
+    g.add(fill); return g;
+  }
+  const angel = style === 'engel';
+  const mat = new THREE.MeshStandardMaterial({
+    map: cached('fe' + (seed % 9) + angel, () => canvasTex(featherCanvas(seed % 9, angel))),
+    emissiveMap: cached('fg' + (seed % 9), () => canvasTex(featherGlowCanvas(seed % 9))), emissive: 0xffffff,
+    emissiveIntensity: angel ? glow * .6 : glow, roughness: .45, metalness: angel ? 0 : .25, side: THREE.DoubleSide});
+  return new THREE.Mesh(featherGeo(len, wid), mat);
+}
+function featherWing(side, style = 'galaxie', spread = .82) {
+  const root = new THREE.Group(); const pts = [];
+  for (let i = 0; i <= 12; i++) { const s = i / 12; pts.push(new THREE.Vector3(side * (.12 + 1.55 * s * spread), .95 * Math.sin(s * Math.PI * .62) * spread, -.35 * s)); }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  root.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 40, .045, 8), style === 'engel'
+    ? new THREE.MeshStandardMaterial({color: '#ffffff', emissive: T.tip, emissiveIntensity: .6}) : glowMat(T.tip, 1.1)));
+  let seed = side > 0 ? 11 : 77;
+  const rows = [[11, .22, 1, s => .85 + .75 * s, .30, s => -8 + 62 * s, -.035, .55], [10, .04, .86, s => .62 + .3 * s, .30, s => -14 + 52 * s, 0, .3], [12, 0, .92, s => .3 + .08 * s, .26, s => -20 + 45 * s, .035, .15]];
+  for (const [n, s0, s1, L, wd, A, dz, gl] of rows) for (let i = 0; i < n; i++) {
+    const s = s0 + (s1 - s0) * i / (n - 1), p = curve.getPoint(s);
+    const f = featherMesh(L(s) * spread, wd * spread, seed++, gl, style);
+    f.position.set(p.x, p.y, p.z + dz); f.rotation.z = side * A(s) * Math.PI / 180; f.rotation.x = .18; root.add(f);
+  }
+  return root;
+}
+
+// ============================================================ FLUEGEL
+function crystalFeatherWing(side) {
+  const root = new THREE.Group(); const pts = []; const r = rnd(side > 0 ? 21 : 37);
+  for (let i = 0; i <= 12; i++) { const s = i / 12; pts.push(new THREE.Vector3(side * (.12 + 1.3 * s), .85 * Math.sin(s * Math.PI * .62), -.3 * s)); }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  root.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 40, .05, 6), crystalMat(2, 2.2)));
+  const rows = [[12, .2, 1, s => .8 + .7 * s, .11, s => -5 + 60 * s, -.04], [10, .03, .85, s => .55 + .3 * s, .1, s => -12 + 50 * s, 0], [12, 0, .92, s => .28 + .1 * s, .09, s => -18 + 45 * s, .04]];
+  let seed = side > 0 ? 400 : 600;
+  for (const [n, s0, s1, L, rad, A, dz] of rows) for (let i = 0; i < n; i++) {
+    const s = s0 + (s1 - s0) * i / (n - 1), p = curve.getPoint(s);
+    const sh = shard(L(s) * (.9 + r() * .2), rad, seed++, 1.7);
+    sh.position.set(p.x, p.y, p.z + dz); sh.rotation.z = Math.PI + side * A(s) * Math.PI / 180; sh.rotation.x = -.15; sh.rotation.y = (r() - .5) * .5;
+    root.add(sh);
+  }
+  return root;
+}
+function crystalFlameWing(side) {
+  const root = new THREE.Group(); const r = rnd(side > 0 ? 7 : 13); const N = 15;
+  for (let i = 0; i < N; i++) {
+    const s = i / (N - 1), ang = (12 + 70 * s) * Math.PI / 180;
+    const len = (.55 + 1.15 * Math.sin(Math.PI * (.15 + s * .75))) * (.85 + r() * .3);
+    const base = new THREE.Vector3(side * (.08 + .55 * s), .25 * Math.sin(s * Math.PI) - .15 * s, -.08 * s);
+    const sh = shard(len, .11 + .05 * r(), 100 + i + (side > 0 ? 0 : 50));
+    sh.position.copy(base); sh.rotation.set(-.25 - r() * .15, (r() - .5) * .6, -side * ang); root.add(sh);
+    if (i % 2 === 0) { const sub = shard(len * .45, .07, 300 + i, 2); sub.position.set(base.x + side * Math.sin(ang) * len * .45, base.y + Math.cos(ang) * len * .45, base.z); sub.rotation.set(-.3, 0, -side * (ang + .5)); root.add(sub); }
+  }
+  const core = shard(.35, .14, 999, 2.4); core.rotation.z = -side * .9; root.add(core);
+  return root;
+}
+function demonWing(side) {
+  const root = new THREE.Group();
+  const shoulder = new THREE.Vector3(side * .1, 0, 0), elbow = new THREE.Vector3(side * .75, .75, -.25);
+  const tips = [[1.65, 1.0], [1.75, .35], [1.5, -.25], [1.05, -.6]].map(([x, y]) => new THREE.Vector3(side * x, y, -.4));
+  const boneMat = new THREE.MeshStandardMaterial({color: T.body, emissive: T.vein, emissiveIntensity: .8, roughness: .4});
+  const tube = (a, b, r0) => root.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(a, b), 1, r0, 6), boneMat));
+  tube(shoulder, elbow, .045); tips.forEach(t => tube(elbow, t, .028));
+  const claw = shard(.22, .04, 51, 2.5); claw.position.copy(elbow); claw.rotation.z = -side * .3; root.add(claw);
+  const pos = [], uv = [];
+  const pts = [shoulder, ...tips, new THREE.Vector3(side * .35, -.55, -.2)];
+  const tri = (a, b, c) => { for (const p of [a, b, c]) { pos.push(p.x, p.y, p.z); uv.push(Math.abs(p.x) * .8, p.y * .8 + .5); } };
+  for (let i = 0; i < tips.length - 1; i++) {
+    const a = tips[i], b = tips[i + 1], mid = a.clone().lerp(b, .5).lerp(elbow, .28);
+    tri(elbow, a, mid); tri(elbow, mid, b);
+  }
+  tri(elbow, tips[tips.length - 1], pts[pts.length - 1]); tri(elbow, pts[pts.length - 1], shoulder);
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.computeVertexNormals();
+  root.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color: T.body, emissive: 0xffffff, emissiveMap: veinTex(1, 2), emissiveIntensity: 1.1, transparent: true, opacity: .88, side: THREE.DoubleSide, roughness: .5})));
+  return root;
+}
+function butterflyWing(side) {
+  const root = new THREE.Group();
+  const tex = galaxyTex(31, 512, 512, null, 'bf');
+  const mk = (pts, sc) => {
+    const s = new THREE.Shape(); s.moveTo(0, 0); for (const [x, y] of pts) s.lineTo(x, y); s.lineTo(0, 0);
+    const geo = new THREE.ShapeGeometry(s, 24); const p = geo.attributes.position, uv = geo.attributes.uv;
+    for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) * .6 + .5, p.getY(i) * .6 + .5);
+    const m = new THREE.Mesh(geo, galaxyMat(tex, .7, {side: THREE.DoubleSide, transparent: true, opacity: .95}));
+    m.scale.set(side * sc, sc, 1);
+    const outline = new THREE.Line(new THREE.BufferGeometry().setFromPoints(s.getPoints(60).map(q => new THREE.Vector3(q.x, q.y, .005))), new THREE.LineBasicMaterial({color: T.tip}));
+    outline.scale.copy(m.scale); root.add(m, outline);
+  };
+  const upper = [], lower = [];
+  for (let i = 0; i <= 30; i++) { const a = -0.15 + i / 30 * 1.75; const r0 = 1.25 * Math.pow(Math.max(0.02, Math.sin(Math.min(Math.PI, Math.max(0, a + .15) * 1.8))), .6); upper.push([Math.cos(a) * r0 * 1.1, Math.sin(a) * r0 * .95]); }
+  for (let i = 0; i <= 30; i++) { const a = -1.5 + i / 30 * 1.35; const r0 = .9 * Math.pow(Math.max(0.02, Math.sin(Math.min(Math.PI, (a + 1.5) * 2.3))), .6); lower.push([Math.cos(a) * r0, Math.sin(a) * r0]); }
+  mk(upper, 1); mk(lower, 1);
+  root.rotation.y = -side * .35;
+  return root;
+}
+const WINGS = {
+  galaxie: {name: 'Galaxie-Federn', sub: 'Federn mit Nebel', make: s => featherWing(s, 'galaxie')},
+  kristallfeder: {name: 'Kristall-Federn', sub: 'Splitter als Federn', make: crystalFeatherWing},
+  flammen: {name: 'Kristall-Flammen', sub: 'Splitter nach oben', make: crystalFlameWing},
+  daemon: {name: 'Dämonen-Flügel', sub: 'Haut mit Leuchtadern', make: demonWing},
+  neon: {name: 'Neon-Federn', sub: 'Leuchtende Umrisse', make: s => featherWing(s, 'neon')},
+  engel: {name: 'Engel', sub: 'Hell, weiche Federn', make: s => featherWing(s, 'engel')},
+  schmetterling: {name: 'Schmetterling', sub: 'Galaxie-Flächen', make: butterflyWing},
+};
+
+// ============================================================ CAPES
+function capePaint(kind) {
+  return (g, w, h) => {
+    const r = rnd(kind.length * 31);
+    if (kind === 'adern') { g.globalCompositeOperation = 'lighter'; g.drawImage(veinCanvas(5, 30, 256), 0, 0, w, h); g.globalCompositeOperation = 'source-over'; diamond(g, w / 2, h * .45, w * .2); }
+    if (kind === 'planet') {
+      const cx = w / 2, cy = h * .48, R = w * .26;
+      let rg = g.createRadialGradient(cx, cy, R * .8, cx, cy, R * 1.6); rg.addColorStop(0, hexA(T.vein, .5)); rg.addColorStop(1, hexA(T.vein, 0)); g.fillStyle = rg; g.fillRect(0, 0, w, h);
+      rg = g.createRadialGradient(cx - R * .4, cy - R * .4, R * .1, cx, cy, R); rg.addColorStop(0, T.light); rg.addColorStop(.35, T.main); rg.addColorStop(1, T.body);
+      g.fillStyle = rg; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fill();
+      g.strokeStyle = T.edge; g.lineWidth = 6; g.beginPath(); g.ellipse(cx, cy, R * 1.75, R * .38, -.25, 0, 7); g.stroke();
+      g.fillStyle = T.light; g.beginPath(); g.arc(w * .76, h * .14, w * .07, 0, 7); g.fill(); g.fillStyle = T.deep; g.beginPath(); g.arc(w * .8, h * .125, w * .065, 0, 7); g.fill();
+    }
+    if (kind === 'schuppen') {
+      for (let y = -20; y < h + 40; y += 34) for (let x = -20; x < w + 40; x += 40) {
+        const ox = x + ((y / 34 | 0) % 2) * 20; const rg = g.createLinearGradient(ox, y, ox, y + 40);
+        rg.addColorStop(0, hexA(T.main, .9)); rg.addColorStop(1, hexA(T.deep, .95)); g.fillStyle = rg;
+        g.beginPath(); g.arc(ox, y, 22, 0, Math.PI); g.fill(); g.strokeStyle = hexA(T.tip, .8); g.lineWidth = 2; g.stroke();
+      }
+    }
+    if (kind === 'wappen') {
+      g.strokeStyle = T.tip; g.lineWidth = 4; g.shadowColor = T.vein; g.shadowBlur = 18;
+      for (const side of [-1, 1]) for (let i = 0; i < 6; i++) {
+        const a = (-50 + i * 22) * Math.PI / 180, L = w * (.36 - i * .03);
+        g.beginPath(); g.moveTo(w / 2 + side * w * .05, h * .4); g.quadraticCurveTo(w / 2 + side * Math.cos(a) * L * .6, h * .4 + Math.sin(a) * L * .4, w / 2 + side * Math.cos(a) * L, h * .4 + Math.sin(a) * L); g.stroke();
+      }
+      g.shadowBlur = 0; sparkle(g, w / 2, h * .4, w * .09);
+    }
+    if (kind === 'mond') {
+      const rg = g.createLinearGradient(0, 0, 0, h); rg.addColorStop(0, hexA(T.deep, .2)); rg.addColorStop(1, hexA(T.main, .6)); g.fillStyle = rg; g.fillRect(0, 0, w, h);
+      g.fillStyle = T.light; g.shadowColor = T.vein; g.shadowBlur = 30; g.beginPath(); g.arc(w * .5, h * .38, w * .24, 0, 7); g.fill();
+      g.shadowBlur = 0; g.fillStyle = T.deep; g.beginPath(); g.arc(w * .62, h * .33, w * .22, 0, 7); g.fill();
+      for (let i = 0; i < 4; i++) sparkle(g, w * (.2 + r() * .6), h * (.6 + r() * .3), 8 + r() * 8);
+    }
+    if (kind === 'sterne') for (let i = 0; i < 8; i++) sparkle(g, r() * w, r() * h, 10 + r() * 14);
+    g.strokeStyle = T.edge; g.lineWidth = 10; g.strokeRect(5, 5, w - 10, h - 10);
+  };
+}
+function diamond(g, x, y, s) {
+  g.save(); g.shadowColor = T.vein; g.shadowBlur = 25; g.fillStyle = hexA(T.main, .9); g.strokeStyle = T.light; g.lineWidth = 4;
+  g.beginPath(); g.moveTo(x, y - s * 1.3); g.lineTo(x + s * .7, y); g.lineTo(x, y + s * 1.3); g.lineTo(x - s * .7, y); g.closePath(); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(x, y - s * 1.3); g.lineTo(x, y + s * 1.3); g.moveTo(x - s * .7, y); g.lineTo(x + s * .7, y); g.stroke(); g.restore();
+}
+function cape(kind) {
+  const g = new THREE.Group(); const W = 10 * px * 1.08, H = 16 * px * 1.02;
+  const mk = sign => {
+    const geo = new THREE.PlaneGeometry(W, H, 12, 20); geo.translate(0, -H / 2, 0);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i); const bend = y * y * .3 - y * .1 + .015 * Math.sin(x * 22 + y * 6) * (-y); p.setZ(i, sign * bend); }
+    geo.computeVertexNormals(); return geo;
+  };
+  const tex = galaxyTex(kind.length * 13, 320, 512, capePaint(kind), 'cape' + kind);
+  const outer = new THREE.Mesh(mk(1), galaxyMat(tex, .6)); outer.rotation.y = Math.PI;          // Aussenseite zeigt nach hinten
+  const inner = new THREE.Mesh(mk(-1), new THREE.MeshStandardMaterial({color: T.body, roughness: .8})); inner.position.z = .004;
+  g.add(outer, inner);
+  g.rotation.x = .1;
+  g.position.set(0, 24 * px, -2.3 * px);
+  return g;
+}
+const CAPES = {
+  planet: {name: 'Galaxie-Planet', sub: 'Planet mit Ring', make: () => cape('planet')},
+  adern: {name: 'Kristall-Adern', sub: 'Leuchtende Risse', make: () => cape('adern')},
+  sterne: {name: 'Sternennebel', sub: 'Nebel und Funken', make: () => cape('sterne')},
+  schuppen: {name: 'Drachenschuppen', sub: 'Schuppen mit Glanz', make: () => cape('schuppen')},
+  wappen: {name: 'Flügel-Wappen', sub: 'Leuchtende Schwingen', make: () => cape('wappen')},
+  mond: {name: 'Mondnacht', sub: 'Sichel und Sterne', make: () => cape('mond')},
+};
+
+// ============================================================ SCHILDE
+function heaterShape(w = .55, h = .7) {
+  const s = new THREE.Shape();
+  s.moveTo(-w, h * .5); s.quadraticCurveTo(0, h * .62, w, h * .5);
+  s.bezierCurveTo(w * 1.02, -h * .1, w * .55, -h * .45, 0, -h * .75);
+  s.bezierCurveTo(-w * .55, -h * .45, -w * 1.02, -h * .1, -w, h * .5); return s;
+}
+function shieldBody(mat, shape = heaterShape(), uvScale = .9) {
+  const geo = new THREE.ExtrudeGeometry(shape, {depth: .08, bevelEnabled: true, bevelThickness: .05, bevelSize: .05, bevelSegments: 3, curveSegments: 24});
+  const pos = geo.attributes.position, uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) * uvScale + .5, pos.getY(i) * uvScale + .5);
+  geo.computeVertexNormals(); return new THREE.Mesh(geo, mat);
+}
+function rimTube(shape, scale, z, col, r0 = .022, k = 2.2) {
+  const pts = shape.getPoints(80).map(p => new THREE.Vector3(p.x * scale, p.y * scale, z));
+  return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 160, r0, 8, true), glowMat(col, k));
+}
+function shieldCrystal() {
+  const g = new THREE.Group(), s = heaterShape(); const m = crystalMat(1, 1.8); m.flatShading = false;
+  g.add(shieldBody(m, s), rimTube(s, 1.04, .1, T.edge));
+  const c = shard(.42, .14, 77, 2.6); c.position.set(0, -.22, .14); g.add(c);
+  for (const side of [-1, 1]) for (let i = 0; i < 6; i++) {
+    const sh = shard(.35 + .28 * Math.sin(i / 5 * Math.PI), .06, 500 + i * 3 + (side > 0 ? 0 : 40), 1.8);
+    sh.position.set(side * .48, .18, -.02); sh.rotation.set(-.2, 0, -side * (25 + i * 11) * Math.PI / 180); g.add(sh);
+  }
+  return g;
+}
+function shieldGalaxy() {
+  const g = new THREE.Group(), s = heaterShape();
+  g.add(shieldBody(galaxyMat(galaxyTex(44, 512, 512, null, 'sh'), .5), s), rimTube(s, 1.04, .1, T.edge), rimTube(s, .8, .12, T.vein, .012, 1.6));
+  for (const side of [-1, 1]) { const w = featherWing(side, 'galaxie', .38); w.position.set(side * .42, .2, -.06); g.add(w); }
+  return g;
+}
+function shieldRound() {
+  const g = new THREE.Group();
+  const disk = new THREE.Mesh(new THREE.CylinderGeometry(.62, .62, .1, 64), [galaxyMat(galaxyTex(45, 512, 512, null, 'rd'), .25), galaxyMat(galaxyTex(45, 512, 512, null, 'rd'), .3), galaxyMat(galaxyTex(45, 512, 512, null, 'rd'), .2)]);
+  disk.rotation.x = Math.PI / 2; g.add(disk);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.62, .03, 12, 80), glowMat(T.edge, .9)); ring.position.z = .03; g.add(ring);
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(.42, .012, 8, 80), glowMat(T.vein, 1.1)); ring2.position.z = .06; g.add(ring2);
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(.17, 0), crystalMat(2, 2.4)); core.position.z = .12; g.add(core);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; const st = new THREE.Mesh(new THREE.SphereGeometry(.03, 12, 8), goldMat()); st.position.set(Math.cos(a) * .52, Math.sin(a) * .52, .06); g.add(st); }
+  return g;
+}
+function shieldScale() {
+  const g = new THREE.Group(), s = heaterShape();
+  const tex = galaxyTex(46, 512, 512, capePaint('schuppen'), 'scl');
+  g.add(shieldBody(galaxyMat(tex, .35, {metalness: .5}), s));
+  const pts = s.getPoints(80).map(p => new THREE.Vector3(p.x * 1.04, p.y * 1.04, .1));
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 160, .04, 8, true), goldMat()));
+  const c = shard(.36, .12, 79, 2.2); c.position.set(0, -.05, .14); c.rotation.z = 0; g.add(c);
+  return g;
+}
+function shieldNeon() {
+  const g = new THREE.Group(), s = heaterShape();
+  g.add(shieldBody(new THREE.MeshStandardMaterial({color: '#08060c', roughness: .3, metalness: .6}), s));
+  for (const [sc, col, r0] of [[1.04, T.tip, .022], [.82, T.vein, .014], [.6, T.edge, .01]]) g.add(rimTube(s, sc, .11, col, r0, 1.5));
+  const star = new THREE.Shape(); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + Math.PI / 2, R = i % 2 ? .07 : .2; i ? star.lineTo(Math.cos(a) * R, Math.sin(a) * R - .05) : star.moveTo(Math.cos(a) * R, Math.sin(a) * R - .05); }
+  const sm = new THREE.Mesh(new THREE.ShapeGeometry(star), glowMat(T.light, 2.4)); sm.position.z = .13; g.add(sm);
+  return g;
+}
+const SHIELDS = {
+  kristall: {name: 'Kristall-Adern', sub: 'Mit Kristall-Flügeln', make: shieldCrystal},
+  galaxie: {name: 'Galaxie mit Flügeln', sub: 'Federn an den Seiten', make: shieldGalaxy},
+  rund: {name: 'Rundschild', sub: 'Kristallkern, Nieten', make: shieldRound},
+  drache: {name: 'Drachenschuppen', sub: 'Goldrand', make: shieldScale},
+  neon: {name: 'Neon', sub: 'Drei Leuchtrahmen', make: shieldNeon},
+};
+
+// ============================================================ HUETE / KRONEN
+const HEAD_TOP = 32 * px;
+function hatCrystalCrown() {
+  const g = new THREE.Group();
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .09, 8, 1, true), crystalMat(2, 1.6, 2)); band.rotation.y = Math.PI / 8; g.add(band);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.305, .014, 6, 8), glowMat(T.edge, 2)); ring.rotation.set(Math.PI / 2, 0, Math.PI / 8); ring.position.y = .045; g.add(ring);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; const sh = shard(i === 0 ? .42 : i % 2 === 0 ? .3 : .19, i === 0 ? .075 : .055, 700 + i, i === 0 ? 2.6 : 1.9); sh.position.set(Math.sin(a) * .28, .04, Math.cos(a) * .28); sh.rotation.set(-.18, a, 0); g.add(sh); }
+  g.position.y = HEAD_TOP + .01; return g;
+}
+function hatHalo() {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.3, .028, 16, 80), glowMat(T.tip, 1.6)); ring.rotation.x = Math.PI / 2; g.add(ring);
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(.36, .008, 8, 80), glowMat(T.edge, 2)); ring2.rotation.x = Math.PI / 2; g.add(ring2);
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const sp = new THREE.Mesh(new THREE.OctahedronGeometry(.03), glowMat(T.light, 3)); sp.position.set(Math.cos(a) * .36, 0, Math.sin(a) * .36); g.add(sp); }
+  g.position.y = HEAD_TOP + .3; g.rotation.x = -.15; g.userData.spin = true; return g;
+}
+function hatHorns() {
+  const g = new THREE.Group();
+  for (const side of [-1, 1]) {
+    const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector3(side * (.18 + .25 * Math.sin(t * 1.4)), .1 + .55 * t - .1 * t * t, -.05 - .35 * t * t)); }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const geo = new THREE.TubeGeometry(curve, 40, .07, 7);
+    const p = geo.attributes.position; // verjuengen
+    for (let i = 0; i < p.count; i++) { const seg = Math.floor(i / 8) / 40; const c = curve.getPoint(Math.min(1, seg)); const k = 1 - seg * .92; p.setXYZ(i, c.x + (p.getX(i) - c.x) * k, c.y + (p.getY(i) - c.y) * k, c.z + (p.getZ(i) - c.z) * k); }
+    geo.computeVertexNormals();
+    g.add(new THREE.Mesh(geo, crystalMat(side > 0 ? 0 : 1, 1.9, 2)));
+  }
+  g.position.y = HEAD_TOP - .05; return g;
+}
+function hatKingCrown() {
+  const g = new THREE.Group();
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(.29, .29, .1, 40, 1, true), goldMat()); band.material.side = THREE.DoubleSide; g.add(band);
+  const velvet = new THREE.Mesh(new THREE.SphereGeometry(.27, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({color: T.body, roughness: 1, emissive: T.mid, emissiveIntensity: .3})); velvet.scale.y = .55; velvet.position.y = .02; g.add(velvet);
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * Math.PI * 2;
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(.05, i % 2 ? .12 : .2, 4), goldMat()); spike.position.set(Math.sin(a) * .29, .05 + (i % 2 ? .06 : .1), Math.cos(a) * .29); g.add(spike);
+    if (i % 2 === 0) { const ball = new THREE.Mesh(new THREE.SphereGeometry(.03, 12, 8), goldMat()); ball.position.set(Math.sin(a) * .29, .26, Math.cos(a) * .29); g.add(ball); }
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(i % 2 ? .025 : .04), glowMat(i % 2 ? T.edge : T.vein, 1.8)); gem.position.set(Math.sin(a) * .3, 0, Math.cos(a) * .3); g.add(gem);
+  }
+  g.position.y = HEAD_TOP + .03; return g;
+}
+function hatOrbit() {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.42, .01, 8, 100), glowMat(T.vein, 2)); ring.rotation.x = Math.PI / 2 - .3; g.add(ring);
+  for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2; const sh = shard(.22, .07, 800 + i, 2.4); sh.position.set(Math.cos(a) * .42, Math.sin(a) * .42 * Math.sin(.3) - .05, Math.sin(a) * .42 * Math.cos(.3)); sh.rotation.z = a; g.add(sh); }
+  g.position.y = HEAD_TOP - .2; g.userData.spin = true; return g;
+}
+const HATS = {
+  kristallkrone: {name: 'Kristall-Krone', sub: 'Splitter und Leuchtring', make: hatCrystalCrown},
+  heiligenschein: {name: 'Heiligenschein', sub: 'Schwebender Ring', make: hatHalo},
+  hoerner: {name: 'Kristall-Hörner', sub: 'Gebogen, mit Adern', make: hatHorns},
+  koenig: {name: 'Königskrone', sub: 'Gold und Edelsteine', make: hatKingCrown},
+  orbit: {name: 'Kristall-Orbit', sub: 'Kreisende Splitter', make: hatOrbit},
+};
+
+// ============================================================ SKIN + SPIELER
+function skinCanvas() {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const R = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+  const skin = '#e9be9f', hair = '#2c2230', hood = '#231a30', hood2 = '#160f20', acc = T.main, pants = '#141020', shoe = '#0b0910';
+  R(0, 0, 32, 16, hair); R(8, 8, 8, 8, skin); R(8, 8, 8, 2, hair); R(0, 10, 8, 6, skin); R(16, 10, 8, 6, skin); R(0, 8, 8, 2, hair); R(16, 8, 8, 2, hair);
+  R(9, 11, 2, 2, '#ffffff'); R(13, 11, 2, 2, '#ffffff'); R(10, 12, 1, 1, acc); R(14, 12, 1, 1, acc); R(11, 14, 2, 1, '#b07a6a');
+  R(16, 16, 24, 16, hood); R(20, 20, 8, 12, hood2); R(23, 22, 2, 5, acc); R(21, 24, 6, 1, acc);
+  R(40, 16, 16, 16, hood); R(40, 29, 16, 3, skin); R(32, 48, 16, 16, hood); R(32, 61, 16, 3, skin);
+  R(0, 16, 16, 16, pants); R(0, 29, 16, 3, shoe); R(16, 48, 16, 16, pants); R(16, 61, 16, 3, shoe);
+  R(16, 16, 24, 1, acc);
+  return c;
+}
+function skinMats(u, v, w, h, d, tex) {
+  // Reihenfolge BoxGeometry: +x (links des Spielers), -x (rechts), +y oben, -y unten, +z vorne, -z hinten
+  const rects = [[u + d + w, v + d, d, h], [u, v + d, d, h], [u + d, v, w, d], [u + d + w, v, w, d], [u + d, v + d, w, h], [u + 2 * d + w, v + d, w, h]];
+  return rects;
+}
+function applySkinUV(geo, u, v, w, h, d) {
+  const rects = skinMats(u, v, w, h, d);
+  const uv = geo.attributes.uv; const per = uv.count / 6;
+  for (let f = 0; f < 6; f++) { const [x0, y0, rw, rh] = rects[f]; for (let i = f * per; i < (f + 1) * per; i++) { const a = uv.getX(i), b = uv.getY(i); uv.setXY(i, (x0 + a * rw) / 64, 1 - (y0 + (1 - b) * rh) / 64); } }
+  uv.needsUpdate = true; return geo;
+}
+function skinTex() { return cached('skin', () => canvasTex(skinCanvas(), {nearest: true})); }
+function player() {
+  const g = new THREE.Group(); const mat = new THREE.MeshStandardMaterial({map: skinTex(), roughness: .9});
+  const part = (w, h, d, u, v, x, y, z) => { const m = new THREE.Mesh(applySkinUV(new THREE.BoxGeometry(w * px, h * px, d * px), u, v, w, h, d), mat); m.position.set(x * px, y * px, z * px); g.add(m); };
+  part(8, 8, 8, 0, 0, 0, 28, 0); part(8, 12, 4, 16, 16, 0, 18, 0);
+  part(4, 12, 4, 40, 16, -6, 18, 0); part(4, 12, 4, 32, 48, 6, 18, 0);
+  part(4, 12, 4, 0, 16, -2, 6, 0); part(4, 12, 4, 16, 48, 2, 6, 0);
+  return g;
+}
+
+// ============================================================ TOTEMS
+function fabricNormal() {
+  return cached('fabric', () => {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); const img = g.createImageData(128, 128); const r = rnd(4);
+    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) { const i = (y * 128 + x) * 4; const n = (r() - .5) * 40 + ((x + y) % 4 < 2 ? 10 : -10); img.data[i] = 128 + n; img.data[i + 1] = 128 + n * .6; img.data[i + 2] = 255; img.data[i + 3] = 255; }
+    g.putImageData(img, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); return t;
+  });
+}
+function totemPlush() {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshPhysicalMaterial({map: skinTex(), roughness: 1, sheen: 1, sheenRoughness: .5, sheenColor: new THREE.Color('#ffffff'), normalMap: fabricNormal(), normalScale: new THREE.Vector2(.35, .35)});
+  const part = (w, h, d, rad, u, v, sw, sh, sd) => new THREE.Mesh(applySkinUV(new RoundedBoxGeometry(w, h, d, 5, rad), u, v, sw, sh, sd), mat);
+  const head = part(.86, .8, .8, .2, 0, 0, 8, 8, 8); head.position.y = .98; head.rotation.z = .06; g.add(head);
+  const body = part(.6, .56, .38, .16, 16, 16, 8, 12, 4); body.position.y = .44; g.add(body);
+  const ra = part(.22, .46, .24, .1, 40, 16, 4, 12, 4); ra.position.set(-.4, .5, .02); ra.rotation.z = -.5; g.add(ra);
+  const la = part(.22, .46, .24, .1, 32, 48, 4, 12, 4); la.position.set(.4, .5, .02); la.rotation.z = .5; g.add(la);
+  const rl = part(.25, .3, .38, .11, 0, 16, 4, 12, 4); rl.position.set(-.15, .16, .14); rl.rotation.x = -1.35; g.add(rl);
+  const ll = part(.25, .3, .38, .11, 16, 48, 4, 12, 4); ll.position.set(.15, .16, .14); ll.rotation.x = -1.35; g.add(ll);
+  const tag = new THREE.Mesh(new THREE.BoxGeometry(.12, .1, .01), new THREE.MeshStandardMaterial({color: '#f4f0fa', emissive: T.main, emissiveIntensity: .25})); tag.position.set(.3, .3, -.05); tag.rotation.y = 1.4; g.add(tag);
+  g.scale.setScalar(1.15); return g;
+}
+function totemCluster() {
+  const g = new THREE.Group();
+  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(.42, 0), new THREE.MeshStandardMaterial({color: '#151018', roughness: .9, flatShading: true, emissive: T.deep})); rock.scale.set(1.2, .5, 1); g.add(rock);
+  const r = rnd(5);
+  [[0, .9, .2, 0, 0], [-.28, .62, .14, .4, .2], [.3, .66, .14, -.45, -.1], [-.1, .45, .1, .2, -.7], [.15, .4, .1, -.2, .8], [.35, .35, .08, -.9, .4]].forEach(([x, L, R, tz, tx], i) => {
+    const s = shard(L, R, 900 + i, 2); s.position.set(x, .1, (r() - .5) * .3); s.rotation.set(tx * .3, r() * 3, tz); g.add(s);
+  });
+  g.position.y = .2; g.scale.setScalar(1.25); return g;
+}
+function totemIdol() {
+  const g = new THREE.Group();
+  const stone = new THREE.MeshPhysicalMaterial({color: T.body, emissive: 0xffffff, emissiveMap: veinTex(0, 2), emissiveIntensity: 1.2, roughness: .35, clearcoat: .6});
+  const head = new THREE.Mesh(new RoundedBoxGeometry(.6, .5, .5, 4, .08), stone); head.position.y = 1.1; g.add(head);
+  for (const x of [-.13, .13]) { const eye = new THREE.Mesh(new THREE.BoxGeometry(.12, .07, .02), glowMat(T.light, 3)); eye.position.set(x, 1.13, .26); g.add(eye); }
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(.24, .03, .02), new THREE.MeshStandardMaterial({color: '#000'})); mouth.position.set(0, .97, .26); g.add(mouth);
+  const body = new THREE.Mesh(new RoundedBoxGeometry(.44, .55, .36, 4, .06), stone); body.position.y = .58; g.add(body);
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(.1), crystalMat(1, 2.6)); gem.position.set(0, .62, .2); gem.scale.y = 1.4; g.add(gem);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(.32, .4, .16, 6), new THREE.MeshStandardMaterial({color: '#120c18', roughness: .5, metalness: .4})); base.position.y = .22; g.add(base);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(.36, .015, 6, 6), glowMat(T.vein, 2)); rim.rotation.x = Math.PI / 2; rim.position.y = .3; g.add(rim);
+  for (const side of [-1, 1]) { const w = crystalFlameWing(side); w.scale.setScalar(.38); w.position.set(side * .18, .78, -.12); g.add(w); }
+  g.scale.setScalar(1.1); return g;
+}
+function totemEmblem() { const g = shieldGalaxy(); g.position.y = .95; g.scale.setScalar(1.15); return g; }
+function totemOrb() {
+  const g = new THREE.Group();
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(.38, 48, 32), galaxyMat(galaxyTex(50, 512, 256, null, 'orb'), .7)); g.add(orb);
+  const atm = new THREE.Mesh(new THREE.SphereGeometry(.42, 32, 16), new THREE.MeshBasicMaterial({color: T.vein, transparent: true, opacity: .12, side: THREE.BackSide})); g.add(atm);
+  const r1 = new THREE.Mesh(new THREE.TorusGeometry(.62, .02, 8, 100), glowMat(T.edge, 2)); r1.rotation.set(Math.PI / 2 - .35, 0, .2); g.add(r1);
+  const r2 = new THREE.Mesh(new THREE.TorusGeometry(.74, .008, 8, 100), glowMat(T.vein, 2)); r2.rotation.set(Math.PI / 2 + .25, .3, 0); g.add(r2);
+  for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; const s = shard(.14, .045, 950 + i, 2.4); s.position.set(Math.cos(a) * .68, Math.sin(a * 2) * .15, Math.sin(a) * .68); s.rotation.z = a; g.add(s); }
+  const stand = new THREE.Mesh(new THREE.CylinderGeometry(.18, .26, .1, 6), new THREE.MeshStandardMaterial({color: '#120c18', metalness: .5, roughness: .4})); stand.position.y = -.6; g.add(stand);
+  g.position.y = .95; g.userData.spin = true; return g;
+}
+const TOTEMS = {
+  plushie: {name: 'Plushie (dein Skin)', sub: 'Weich, sitzend', make: totemPlush},
+  kristall: {name: 'Kristall-Cluster', sub: 'Splitter auf Stein', make: totemCluster},
+  idol: {name: 'Totem-Idol', sub: 'Leuchtaugen, Adern', make: totemIdol},
+  emblem: {name: 'Galaxie-Emblem', sub: 'Schild mit Flügeln', make: totemEmblem},
+  orb: {name: 'Planeten-Orb', sub: 'Ringe und Splitter', make: totemOrb},
+};
+
+// ============================================================ Kategorien
+const CATS = {
+  wings: {name: 'Flügel', items: WINGS, player: true, cam: [195, 10, 9.5, 1.4]},
+  capes: {name: 'Capes', items: CAPES, player: true, cam: [200, 8, 4.2, 1.15]},
+  shields: {name: 'Schilde', items: SHIELDS, player: false, cam: [15, 4, 5.4, 1.0]},
+  hats: {name: 'Hüte & Kronen', items: HATS, player: true, cam: [25, 16, 2.6, 1.85]},
+  totems: {name: 'Totems', items: TOTEMS, player: false, cam: [25, 8, 4.0, .85]},
+};
+
+// ============================================================ Szene
+const Q = new URLSearchParams(location.search);
+const SHOT = Q.get('shot') === '1';
+if (SHOT) document.body.classList.add('shot');
+const state = {cat: Q.get('cat') || 'wings', item: Q.get('item') || null, theme: Q.get('theme') || 'lila', player: true, spin: !SHOT, anim: !SHOT};
+
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+renderer.setPixelRatio(SHOT ? 1 : Math.min(2, window.devicePixelRatio || 1));
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .9;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(32, 1, .05, 100);
+const controls = new OrbitControls(cam, renderer.domElement);
+controls.enableDamping = true; controls.enablePan = false; controls.minDistance = 1.2; controls.maxDistance = 14;
+scene.add(new THREE.AmbientLight(0xffffff, .3));
+const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(3, 5, 4); scene.add(key);
+const back = new THREE.DirectionalLight(0xffffff, .8); back.position.set(-2, 3, -5); scene.add(back);
+const pt = new THREE.PointLight(0xffffff, 6, 8); pt.position.set(0, 2.2, -1.6); scene.add(pt);
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, cam));
+const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), .6, .45, .45); composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+let content = new THREE.Group(); scene.add(content);
+let animated = [];
+let sparks;
+function disposeTree(o) { o.traverse(c => { if (c.geometry) c.geometry.dispose(); }); }
+
+function build() {
+  T = THEMES[state.theme];
+  scene.background = new THREE.Color(T.bg);
+  pt.color.set(T.vein);
+  scene.remove(content); disposeTree(content); content = new THREE.Group(); scene.add(content); animated = [];
+  const cat = CATS[state.cat]; const it = cat.items[state.item];
+  if (cat.player && state.player) content.add(player());
+  if (state.cat === 'wings') {
+    const w = new THREE.Group(); const l = it.make(-1), r = it.make(1); w.add(l, r);
+    w.position.set(0, 22 * px, -2.8 * px); content.add(w); animated.push({kind: 'flap', l, r});
+  } else if (state.cat === 'capes') { const c = it.make(); content.add(c); animated.push({kind: 'cape', o: c}); }
+  else if (state.cat === 'shields') { const s = it.make(); s.position.y = 1.0; s.scale.setScalar(1.35); content.add(s); }
+  else { const o = it.make(); content.add(o); if (o.userData.spin) animated.push({kind: 'spin', o}); }
+  if (sparks) { scene.remove(sparks); sparks.geometry.dispose(); }
+  const sg = new THREE.BufferGeometry(), sp = [], r0 = rnd(9);
+  for (let i = 0; i < 160; i++) sp.push((r0() - .5) * 7, r0() * 4, (r0() - .5) * 7);
+  sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+  sparks = new THREE.Points(sg, new THREE.PointsMaterial({color: T.vein, size: .02})); scene.add(sparks);
+  document.getElementById('lblCat').textContent = cat.name; document.getElementById('lblName').textContent = it.name + ' · ' + T.name;
+}
+function setCamera() {
+  const [yawD, pitchD, dist, ty] = CATS[state.cat].cam;
+  const yaw = (+(Q.get('yaw') ?? yawD)) * Math.PI / 180, pitch = (+(Q.get('pitch') ?? pitchD)) * Math.PI / 180, d = +(Q.get('dist') ?? dist);
+  controls.target.set(0, ty, 0);
+  cam.position.set(Math.sin(yaw) * Math.cos(pitch) * d, ty + Math.sin(pitch) * d, Math.cos(yaw) * Math.cos(pitch) * d);
+  controls.update();
+}
+function resize() {
+  const w = stage.clientWidth || 600, h = stage.clientHeight || 600;
+  renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix();
+}
+
+// ---------- UI ----------
+const tabs = document.getElementById('tabs'), variants = document.getElementById('variants'), chips = document.getElementById('chips');
+function renderUI() {
+  tabs.innerHTML = ''; for (const [k, c] of Object.entries(CATS)) {
+    const b = document.createElement('button'); b.textContent = c.name; b.setAttribute('aria-pressed', k === state.cat);
+    b.onclick = () => { state.cat = k; state.item = Object.keys(c.items)[0]; renderUI(); build(); setCamera(); }; tabs.append(b);
+  }
+  variants.innerHTML = ''; for (const [k, it] of Object.entries(CATS[state.cat].items)) {
+    const b = document.createElement('button'); b.innerHTML = `${it.name}<small>${it.sub}</small>`; b.setAttribute('aria-pressed', k === state.item);
+    b.onclick = () => { state.item = k; renderUI(); build(); }; variants.append(b);
+  }
+  chips.innerHTML = ''; for (const [k, t] of Object.entries(THEMES)) {
+    const b = document.createElement('button'); b.style.background = t.chip; b.title = t.name; b.setAttribute('aria-label', 'Farbe ' + t.name); b.setAttribute('aria-pressed', k === state.theme);
+    b.onclick = () => { state.theme = k; renderUI(); build(); }; chips.append(b);
+  }
+}
+document.getElementById('optPlayer').onchange = e => { state.player = e.target.checked; build(); };
+document.getElementById('optSpin').onchange = e => { state.spin = e.target.checked; };
+document.getElementById('optAnim').onchange = e => { state.anim = e.target.checked; };
+const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reduce) { state.spin = false; state.anim = false; document.getElementById('optSpin').checked = false; document.getElementById('optAnim').checked = false; }
+
+if (!state.item) state.item = Object.keys(CATS[state.cat].items)[0];
+renderUI(); build(); resize(); setCamera();
+window.addEventListener('resize', resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+
+const clock = new THREE.Clock();
+function tick() {
+  const t = clock.getElapsedTime();
+  if (state.anim) for (const a of animated) {
+    if (a.kind === 'flap') { const f = Math.sin(t * 1.6) * .12; a.l.rotation.y = f; a.r.rotation.y = -f; }
+    if (a.kind === 'cape') a.o.rotation.x = .1 + Math.sin(t * 1.3) * .04;
+    if (a.kind === 'spin') a.o.rotation.y = t * .6;
+  }
+  controls.autoRotate = state.spin; controls.autoRotateSpeed = 1.2; controls.update();
+  composer.render();
+}
+if (SHOT) { composer.render(); window.__done = true; }
+else renderer.setAnimationLoop(tick);
+</script>
