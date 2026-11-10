@@ -1,0 +1,171 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Wings 3D</title>
+<style>html,body{margin:0;background:#07040f;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const P = new URLSearchParams(location.search);
+const THEMES = {
+  lila:  {deep:'#0a0418', mid:'#3a1270', main:'#a03cf0', tip:'#ff6cf5', light:'#ffd6ff', glow:0xc050ff, bg:'#0b0618'},
+  dark:  {deep:'#020203', mid:'#1c1c24', main:'#5a5a68', tip:'#e8e8f2', light:'#ffffff', glow:0xffffff, bg:'#050507'},
+  blau:  {deep:'#020814', mid:'#0f2f66', main:'#2f7cf0', tip:'#7fe0ff', light:'#e0f6ff', glow:0x4fb0ff, bg:'#040a18'},
+};
+const T = THEMES[P.get('theme') || 'lila'];
+const W = +(P.get('w') || 900), H = +(P.get('h') || 900);
+const yaw = +(P.get('yaw') || 200) * Math.PI / 180, pitch = +(P.get('pitch') || 12) * Math.PI / 180;
+const dist = +(P.get('dist') || 10.5);
+const spread = +(P.get('spread') || 0.82);
+
+const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.85;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(T.bg);
+const cam = new THREE.PerspectiveCamera(32, W / H, 0.1, 100);
+const target = new THREE.Vector3(0, 1.35, 0);
+cam.position.set(target.x + Math.sin(yaw) * Math.cos(pitch) * dist, target.y + Math.sin(pitch) * dist,
+                 target.z + Math.cos(yaw) * Math.cos(pitch) * dist);
+cam.lookAt(target);
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(3, 5, -4); scene.add(key);
+const rimL = new THREE.PointLight(T.glow, 6, 10); rimL.position.set(0, 2, -2.5); scene.add(rimL);
+const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-3, 2, 4); scene.add(fill);
+
+// ---------- Galaxie-Textur fuer Federn (Canvas) ----------
+function rnd(seed){ let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+function featherTexture(seed){
+  const c = document.createElement('canvas'); c.width = 128; c.height = 512;
+  const g = c.getContext('2d'); const r = rnd(seed);
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, T.deep); grad.addColorStop(0.35, T.mid); grad.addColorStop(0.75, T.main); grad.addColorStop(1, T.tip);
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 512);
+  for (let i = 0; i < 40; i++) {             // Nebelwolken
+    const x = r() * 128, y = r() * 512, rad = 20 + r() * 60;
+    const rg = g.createRadialGradient(x, y, 0, x, y, rad);
+    rg.addColorStop(0, r() < .5 ? T.main + '66' : T.deep + '88'); rg.addColorStop(1, '#00000000');
+    g.fillStyle = rg; g.fillRect(0, 0, 128, 512);
+  }
+  g.strokeStyle = T.light + '77'; g.lineWidth = 2;   // Kiel
+  g.beginPath(); g.moveTo(64, 0); g.lineTo(64, 470); g.stroke();
+  g.strokeStyle = T.light + '33'; g.lineWidth = 1;   // Federaeste
+  for (let y = 20; y < 480; y += 9) { g.beginPath(); g.moveTo(64, y); g.lineTo(4, y + 26); g.moveTo(64, y); g.lineTo(124, y + 26); g.stroke(); }
+  for (let i = 0; i < 18; i++) {             // Sterne
+    const x = 10 + r() * 108, y = 60 + r() * 440, s = r() < .2 ? 3 : 1.5;
+    g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, s, 0, 7); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function glowTexture(seed){            // nur die Spitzen + Sterne leuchten
+  const c = document.createElement('canvas'); c.width = 128; c.height = 512;
+  const g = c.getContext('2d'); const r = rnd(seed + 99);
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, '#000'); grad.addColorStop(0.6, '#000'); grad.addColorStop(1, T.tip);
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 512);
+  for (let i = 0; i < 10; i++) { g.fillStyle = '#fff'; g.beginPath(); g.arc(10 + r() * 108, 60 + r() * 440, 2.5, 0, 7); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+
+// ---------- Feder-Geometrie ----------
+function featherGeo(len, wid){
+  const s = new THREE.Shape();
+  s.moveTo(-wid * .18, 0);
+  s.bezierCurveTo(-wid * .55, -len * .15, -wid * .55, -len * .65, -wid * .2, -len * .95);
+  s.quadraticCurveTo(0, -len * 1.04, wid * .2, -len * .95);
+  s.bezierCurveTo(wid * .55, -len * .65, wid * .55, -len * .15, wid * .18, 0);
+  s.lineTo(-wid * .18, 0);
+  const geo = new THREE.ExtrudeGeometry(s, {depth: 0.012, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 2, curveSegments: 10});
+  // UV: Breite -> u, Laenge -> v (0 Wurzel, 1 Spitze)
+  const pos = geo.attributes.position, uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / (wid * 1.2) + .5, 1 + pos.getY(i) / len);
+  geo.translate(0, 0, -0.006);
+  return geo;
+}
+// leichte Kruemmung der Feder
+function bend(geo, amount){
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setZ(i, p.getZ(i) + amount * y * y); }
+  geo.computeVertexNormals(); return geo;
+}
+
+function featherMesh(len, wid, seed, glowAmt){
+  const mat = new THREE.MeshStandardMaterial({map: featherTexture(seed), emissiveMap: glowTexture(seed), emissive: 0xffffff,
+    emissiveIntensity: glowAmt, roughness: .45, metalness: .25, side: THREE.DoubleSide});
+  return new THREE.Mesh(bend(featherGeo(len, wid), -0.12), mat);
+}
+
+// ---------- Fluegel ----------
+function wing(side){
+  const root = new THREE.Group();
+  // Vorderkante: Bogen von der Schulter nach aussen-oben
+  const pts = [];
+  for (let i = 0; i <= 12; i++) {
+    const s = i / 12;
+    pts.push(new THREE.Vector3(side * (0.12 + 1.55 * s * spread), 0.95 * Math.sin(s * Math.PI * .62) * spread, -0.35 * s));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.045, 8),
+    new THREE.MeshStandardMaterial({color: T.main, emissive: T.tip, emissiveIntensity: 1.1, roughness: .3}));
+  root.add(tube);
+  let seed = side > 0 ? 11 : 77;
+  const rows = [
+    // n, s0, s1, laenge(s), breite, winkel(s) (Grad, 0 = senkrecht runter, + = nach aussen), z-Versatz, glow
+    [11, .22, 1.0, s => .85 + .75 * s, .30, s => -8 + 62 * s, -0.035, .55],
+    [10, .04, .86, s => .62 + .30 * s, .30, s => -14 + 52 * s, 0.0, .3],
+    [12, .00, .92, s => .30 + .08 * s, .26, s => -20 + 45 * s, 0.035, .15],
+  ];
+  for (const [n, s0, s1, L, wd, A, dz, gl] of rows) {
+    for (let i = 0; i < n; i++) {
+      const s = s0 + (s1 - s0) * i / (n - 1);
+      const p = curve.getPoint(s);
+      const f = featherMesh(L(s) * spread, wd * spread, seed++, gl);
+      f.position.set(p.x, p.y, p.z + dz);
+      f.rotation.z = side * A(s) * Math.PI / 180;
+      f.rotation.x = 0.18;                     // leicht nach hinten geneigt
+      root.add(f);
+    }
+  }
+  return root;
+}
+
+// ---------- Spieler (Platzhalter) ----------
+function box(w, h, d, color, x, y, z){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({color, roughness: .9}));
+  m.position.set(x, y, z); scene.add(m); return m;
+}
+const px = 1 / 16;
+box(8 * px, 8 * px, 8 * px, '#3a2a24', 0, 28 * px, 0);           // Kopf
+box(8 * px, 12 * px, 4 * px, '#5a2aa0', 0, 18 * px, 0);           // Koerper
+box(4 * px, 12 * px, 4 * px, '#5a2aa0', -6 * px, 18 * px, 0);     // Arme
+box(4 * px, 12 * px, 4 * px, '#5a2aa0', 6 * px, 18 * px, 0);
+box(4 * px, 12 * px, 4 * px, '#241a3a', -2 * px, 6 * px, 0);      // Beine
+box(4 * px, 12 * px, 4 * px, '#241a3a', 2 * px, 6 * px, 0);
+// Gesicht (vorne = +z)
+box(2 * px, 1 * px, .2 * px, '#ffffff', -2 * px, 28 * px, 4.05 * px);
+box(2 * px, 1 * px, .2 * px, '#ffffff', 2 * px, 28 * px, 4.05 * px);
+
+const wings = new THREE.Group();
+wings.add(wing(1)); wings.add(wing(-1));
+wings.position.set(0, 23 * px, -2.6 * px);
+wings.rotation.x = 0.08;
+scene.add(wings);
+
+// schwebende Funken
+const sg = new THREE.BufferGeometry(); const sp = []; const r0 = rnd(5);
+for (let i = 0; i < 140; i++) sp.push((r0() - .5) * 6, r0() * 4, (r0() - .5) * 6 - 1);
+sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+scene.add(new THREE.Points(sg, new THREE.PointsMaterial({color: T.light, size: .03})));
+
+const comp = new EffectComposer(renderer);
+comp.addPass(new RenderPass(scene, cam));
+comp.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.45, 0.55));
+comp.addPass(new OutputPass());
+comp.render();
+window.__done = true;
+</script></body></html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>McBen Cosmetics Menu</title>
+<style>
+:root{--bg:#07040f;--panel:rgba(20,12,36,.82);--line:rgba(190,120,255,.25);--accent:#c45cff;--accent2:#ff6cf5;--text:#efe6ff;--muted:#a493c4}
+*{box-sizing:border-box}
+body{margin:0;width:1600px;height:900px;font-family:"Segoe UI",system-ui,sans-serif;color:var(--text);
+ background:radial-gradient(1200px 600px at 30% 20%,#2a0f4d 0%,transparent 60%),radial-gradient(900px 600px at 80% 90%,#3a0d45 0%,transparent 60%),#07040f;overflow:hidden}
+.world{position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.015) 0 64px,transparent 64px 128px);filter:blur(1px)}
+.wrap{position:absolute;inset:40px 60px;display:grid;grid-template-columns:210px 1fr 520px;gap:22px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(14px);box-shadow:0 0 40px rgba(160,60,240,.12)}
+.side{padding:22px 14px;display:flex;flex-direction:column;gap:6px}
+.logo{font-weight:800;font-size:20px;letter-spacing:.5px;padding:4px 10px 18px}
+.logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;color:transparent}
+.tab{padding:12px 14px;border-radius:12px;color:var(--muted);font-weight:600;font-size:15px;display:flex;gap:12px;align-items:center}
+.tab.on{background:linear-gradient(90deg,rgba(196,92,255,.28),rgba(196,92,255,.06));color:#fff;box-shadow:inset 2px 0 0 var(--accent)}
+.tab i{width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,.08);display:inline-block}
+.tab.on i{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.side .grow{flex:1}
+.key{font-size:12px;color:var(--muted);padding:0 10px}
+.key b{color:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-left:4px}
+.stage{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.stage img{width:560px;height:560px;object-fit:cover;border-radius:14px;mask-image:radial-gradient(circle,#000 55%,transparent 72%)}
+.stage .rot{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:13px;color:var(--muted);
+ border:1px solid var(--line);border-radius:999px;padding:7px 16px;background:rgba(0,0,0,.25)}
+.stage .name{position:absolute;top:22px;left:26px;font-size:13px;color:var(--muted)}
+.stage .name b{display:block;color:#fff;font-size:22px;margin-top:2px}
+.list{padding:22px;display:flex;flex-direction:column;gap:18px}
+h3{margin:0;font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.card{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#0e0a18;position:relative}
+.card img{display:block;width:100%;height:96px;object-fit:cover}
+.card div{font-size:12.5px;padding:7px 10px;color:#ddd}
+.card.on{border:2px solid var(--accent);box-shadow:0 0 18px rgba(196,92,255,.55)}
+.card.on:after{content:"✓";position:absolute;top:6px;right:8px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;display:grid;place-items:center}
+.card.lock{opacity:.45}
+.row{display:flex;align-items:center;justify-content:space-between;font-size:14px}
+.sw{width:46px;height:26px;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));position:relative}
+.sw:after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+.sw.off{background:rgba(255,255,255,.12)} .sw.off:after{left:3px;right:auto}
+.chips{display:flex;gap:10px}
+.chip{width:34px;height:34px;border-radius:10px;border:2px solid transparent}
+.chip.on{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,.5)}
+.slider{height:6px;border-radius:9px;background:rgba(255,255,255,.12);position:relative;width:250px}
+.slider i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.slider b{position:absolute;top:-6px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 10px var(--accent)}
+.foot{display:flex;gap:10px;margin-top:auto}
+.btn{flex:1;text-align:center;padding:12px;border-radius:12px;font-weight:700;border:1px solid var(--line);color:var(--muted)}
+.btn.main{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;border:none;box-shadow:0 0 22px rgba(196,92,255,.45)}
+</style></head><body>
+<div class="world"></div>
+<div class="wrap">
+  <div class="panel side">
+    <div class="logo"><span>McBen</span> Cosmetics</div>
+    <div class="tab on"><i></i>Flügel</div>
+    <div class="tab"><i></i>Capes</div>
+    <div class="tab"><i></i>Totem</div>
+    <div class="tab"><i></i>Hüte</div>
+    <div class="tab"><i></i>Effekte</div>
+    <div class="tab"><i></i>HUD</div>
+    <div class="grow"></div>
+    <div class="key">Menü öffnen <b>K</b></div>
+  </div>
+  <div class="panel stage">
+    <div class="name">Ausgewählt<b>Galaxie-Flügel</b></div>
+    <img src="menu/preview.png">
+    <div class="rot">⟲ Ziehen zum Drehen</div>
+  </div>
+  <div class="panel list">
+    <h3>Flügel</h3>
+    <div class="grid">
+      <div class="card on"><img src="menu/wing_lila.png"><div>Galaxie</div></div>
+      <div class="card"><img src="menu/wing_dark.png"><div>Dark Edition</div></div>
+      <div class="card"><img src="menu/wing_blau.png"><div>Eis-Galaxie</div></div>
+    </div>
+    <h3>Farbe</h3>
+    <div class="chips">
+      <div class="chip on" style="background:linear-gradient(135deg,#7a2ae0,#ff6cf5)"></div>
+      <div class="chip" style="background:linear-gradient(135deg,#222,#eee)"></div>
+      <div class="chip" style="background:linear-gradient(135deg,#0f3fa0,#7fe0ff)"></div>
+      <div class="chip" style="background:linear-gradient(135deg,#7a0f20,#ff6c80)"></div>
+      <div class="chip" style="background:linear-gradient(135deg,#0f6a30,#7fffb0)"></div>
+    </div>
+    <h3>Einstellungen</h3>
+    <div class="row">Flügel anzeigen <div class="sw"></div></div>
+    <div class="row">Flügelschlag-Animation <div class="sw"></div></div>
+    <div class="row">Mit Elytra ausblenden <div class="sw off"></div></div>
+    <div class="row">Leuchten <div class="slider"><i style="width:70%"></i><b style="left:66%"></b></div></div>
+    <div class="row">Größe <div class="slider"><i style="width:55%"></i><b style="left:51%"></b></div></div>
+    <div class="foot"><div class="btn">Zurücksetzen</div><div class="btn main">Fertig</div></div>
+  </div>
+</div>
+<script>window.__done=true</script>
+</body></html>
