@@ -348,13 +348,7 @@ function chainWing(side) {
 }
 const WINGS = {
   galaxie: {name: 'Galaxie-Federn', sub: 'Federn mit Nebel', make: s => featherWing(s, 'galaxie')},
-  kristallfeder: {name: 'Kristall-Federn', sub: 'Splitter als Federn', make: crystalFeatherWing},
-  flammen: {name: 'Kristall-Flammen', sub: 'Splitter nach oben', make: crystalFlameWing},
-  daemon: {name: 'Dämonen-Flügel', sub: 'Haut mit Leuchtadern', make: demonWing},
-  neon: {name: 'Neon-Federn', sub: 'Leuchtende Umrisse', make: s => featherWing(s, 'neon')},
   engel: {name: 'Engel', sub: 'Hell, weiche Federn', make: s => featherWing(s, 'engel')},
-  schmetterling: {name: 'Schmetterling', sub: 'Galaxie-Flächen', make: butterflyWing},
-  ketten: {name: 'Ketten-Flügel', sub: 'Ketten mit Kristallspitzen', make: chainWing},
 };
 
 // ============================================================ CAPES
@@ -512,11 +506,55 @@ function tallShield(face, rimCol, rimK, rimMat = null) {
   const boss = new THREE.Mesh(new THREE.SphereGeometry(.07, 24, 16), rimMat || glowMat(T.light, rimK)); boss.scale.z = .5; boss.position.set(0, .08, .17); g.add(boss);
   g.scale.setScalar(1.25); return g;
 }
+// Schild wie in Minecraft: Brett 12x22x1 Pixel, Textur 2x (24x44), Griff hinten
+function shieldPixels(kind) {
+  const W = 24, H = 44, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const r = rnd(kind.length * 17 + 3);
+  const P = (x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
+  const rimL = '#b9b2c8', rimD = '#6e6782';
+  // Grundflaeche
+  const base = {galaxie: T.body, kristall: T.deep, mond: T.deep, stern: T.mid, geteilt: T.deep, streifen: T.deep}[kind];
+  g.fillStyle = base; g.fillRect(0, 0, W, H);
+  if (kind === 'galaxie') for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const v = r(); if (v < .22) P(x, y, T.mid); else if (v < .27) P(x, y, T.main); else if (v < .285) P(x, y, '#ffffff'); }
+  if (kind === 'geteilt') for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (x / W > y / H) P(x, y, (x / W - y / H) < .06 ? T.tip : T.main);
+  if (kind === 'streifen') { g.fillStyle = T.main; g.fillRect(9, 0, 6, H); g.fillStyle = T.tip; g.fillRect(9, 0, 1, H); g.fillRect(14, 0, 1, H); }
+  if (kind === 'kristall') { const cx = 12, cy = 20;
+    for (let y = -11; y <= 11; y++) for (let x = -6; x <= 6; x++) { const d = Math.abs(x) / 6 + Math.abs(y) / 11; if (d <= 1) P(cx + x - (x < 0 ? 0 : 1), cy + y, d > .82 ? T.light : (x < 0 && y < 0) ? T.tip : (x >= 0 && y >= 0) ? T.mid : T.main); } }
+  if (kind === 'mond') { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const a = Math.hypot(x - 11, y - 18), b = Math.hypot(x - 14.5, y - 15.5); if (a < 8 && b > 7) P(x, y, a > 6.8 ? T.tip : T.light); }
+    for (const [x, y] of [[18, 7], [6, 30], [17, 33], [5, 8]]) { P(x, y, '#fff'); P(x - 1, y, T.light); P(x + 1, y, T.light); P(x, y - 1, T.light); P(x, y + 1, T.light); } }
+  if (kind === 'stern') { const cx = 12, cy = 20; for (let y = -10; y <= 10; y++) for (let x = -10; x <= 10; x++) { const d = Math.pow(Math.abs(x) / 10, .55) + Math.pow(Math.abs(y) / 10, .55); if (d <= 1.02) P(cx + x - (x < 0 ? 0 : 1) + (x === 0 ? 0 : 0), cy + y, d > .86 ? T.tip : T.light); } }
+  // Rand wie beim Minecraft-Schild (2 Pixel, oben hell, unten dunkel)
+  g.fillStyle = rimL; g.fillRect(0, 0, W, 2); g.fillRect(0, 0, 2, H);
+  g.fillStyle = rimD; g.fillRect(0, H - 2, W, 2); g.fillRect(W - 2, 0, 2, H);
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(2, 2, W - 4, 1); g.fillRect(2, 2, 1, H - 4);
+  return c;
+}
+function backPixels() {
+  const c = document.createElement('canvas'); c.width = 24; c.height = 44; const g = c.getContext('2d');
+  for (let y = 0; y < 44; y++) { g.fillStyle = (y >> 2) % 2 ? '#3b2a1e' : '#47331f'; g.fillRect(0, y, 24, 1); }
+  g.fillStyle = '#6e6782'; g.fillRect(0, 0, 24, 2); g.fillRect(0, 42, 24, 2); g.fillRect(0, 0, 2, 44); g.fillRect(22, 0, 2, 44);
+  return c;
+}
+function mcShield(kind) {
+  const g = new THREE.Group();
+  const front = cached('shp' + kind, () => canvasTex(shieldPixels(kind), {nearest: true}));
+  const back = cached('shb', () => canvasTex(backPixels(), {nearest: true}));
+  const side = new THREE.MeshStandardMaterial({color: '#8a8299', roughness: .6, metalness: .4});
+  const mats = [side, side, side, side,
+    new THREE.MeshStandardMaterial({map: front, roughness: .55, metalness: .1, emissiveMap: front, emissive: 0xffffff, emissiveIntensity: .25}),
+    new THREE.MeshStandardMaterial({map: back, roughness: .8})];
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(12 * px, 22 * px, 1 * px), mats));
+  const wood = new THREE.MeshStandardMaterial({color: '#4a351f', roughness: .85});
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(2 * px, 6 * px, 6 * px), wood); grip.position.set(0, 0, -3.5 * px); g.add(grip);
+  g.scale.setScalar(1.7); return g;
+}
 const SHIELDS = {
-  kristall: {name: 'Kristall-Adern', sub: 'Leuchtende Risse', make: () => { const m = crystalMat(1, 1.6); m.flatShading = false; return tallShield(m, T.tip, 1.2); }},
-  galaxie: {name: 'Galaxie', sub: 'Nebel und Sterne', make: () => tallShield(galaxyMat(galaxyTex(44, 512, 512, null, 'sh'), .45), T.vein, 1.2)},
-  dark: {name: 'Dark-Metall', sub: 'Schwarz mit Leuchtrand', make: () => tallShield(new THREE.MeshStandardMaterial({color: '#1d1828', roughness: .35, metalness: .5, emissive: T.deep, emissiveIntensity: .6}), T.tip, 1.6)},
-  gold: {name: 'Gold + Galaxie', sub: 'Goldrand', make: () => tallShield(galaxyMat(galaxyTex(47, 512, 512, null, 'sh2'), .35), T.vein, 1, goldMat())},
+  galaxie: {name: 'Galaxie', sub: 'Pixel-Nebel mit Sternen', make: () => mcShield('galaxie')},
+  kristall: {name: 'Kristall', sub: 'Ein Edelstein in der Mitte', make: () => mcShield('kristall')},
+  mond: {name: 'Mond', sub: 'Sichel und Sterne', make: () => mcShield('mond')},
+  stern: {name: 'Stern', sub: 'Großer Funkelstern', make: () => mcShield('stern')},
+  geteilt: {name: 'Geteilt', sub: 'Zwei Farben schräg', make: () => mcShield('geteilt')},
+  streifen: {name: 'Streifen', sub: 'Mittelstreifen', make: () => mcShield('streifen')},
 };
 
 // ============================================================ HUETE / KRONEN
@@ -666,7 +704,7 @@ const TOTEMS = {
 const CATS = {
   wings: {name: 'Flügel', items: WINGS, player: true, cam: [195, 10, 9.5, 1.4]},
   capes: {name: 'Capes', items: CAPES, player: true, cam: [200, 8, 4.2, 1.15]},
-  shields: {name: 'Schilde', items: SHIELDS, player: false, cam: [15, 4, 5.2, 1.0]},
+  shields: {name: 'Schilde', items: SHIELDS, player: false, cam: [22, 6, 4.6, 1.0]},
   hats: {name: 'Heiligenschein', items: HATS, player: true, cam: [25, 16, 2.6, 1.85]},
   totems: {name: 'Totem: Plushie', items: TOTEMS, player: false, cam: [25, 8, 4.0, .85]},
 };
