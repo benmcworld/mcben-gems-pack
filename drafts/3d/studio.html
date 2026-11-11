@@ -37,6 +37,7 @@ h2{margin:0;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:v
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .row label{cursor:pointer}
 input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+input[type=range]{width:150px;accent-color:var(--accent)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px}
 .note{color:var(--muted);font-size:12px;line-height:1.5;margin:0}
 body.shot #app{padding:0}body.shot header,body.shot aside,body.shot #hint,body.shot #label{display:none}
@@ -60,6 +61,7 @@ body.shot main{display:block}body.shot #stage{border:0;border-radius:0;position:
         <div class="row"><label for="optPlayer">Spieler anzeigen</label><input type="checkbox" id="optPlayer" checked></div>
         <div class="row"><label for="optSpin">Automatisch drehen</label><input type="checkbox" id="optSpin" checked></div>
         <div class="row"><label for="optAnim">Animation</label><input type="checkbox" id="optAnim" checked></div>
+        <div class="row"><label for="optGlow">Leuchtstärke</label><input type="range" id="optGlow" min="0.2" max="2" step="0.05" value="1"></div>
       </section>
       <p class="note">Platzhalter-Skin. In der Mod nimmt das Plushie automatisch deinen eigenen Skin.</p>
     </aside>
@@ -324,6 +326,26 @@ function butterflyWing(side) {
   root.rotation.y = -side * .35;
   return root;
 }
+function chainWing(side) {
+  const root = new THREE.Group(); const pts = [];
+  for (let i = 0; i <= 12; i++) { const s = i / 12; pts.push(new THREE.Vector3(side * (.12 + 1.3 * s), .85 * Math.sin(s * Math.PI * .62), -.3 * s)); }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const metal = new THREE.MeshStandardMaterial({color: '#8a7aa6', metalness: .6, roughness: .3, emissive: T.mid, emissiveIntensity: .35});
+  const glow = glowMat(T.tip, 1.6);
+  const linkGeo = new THREE.TorusGeometry(.035, .01, 6, 16); linkGeo.scale(1, 1.7, 1);
+  const bigLink = new THREE.TorusGeometry(.05, .016, 6, 16); bigLink.scale(1, 1.7, 1);
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let k = 0; k < 18; k++) { const s = k / 17, p = curve.getPoint(s), d = curve.getTangent(s);
+    const m = new THREE.Mesh(bigLink, k % 4 === 0 ? glow : metal); m.position.copy(p); m.quaternion.setFromUnitVectors(up, d); m.rotateY(k % 2 ? Math.PI / 2 : 0); root.add(m); }
+  for (let i = 0; i < 11; i++) {
+    const s = .08 + .92 * i / 10, top = curve.getPoint(s), a = (-4 + 60 * s) * Math.PI / 180;
+    const d = new THREE.Vector3(side * Math.sin(a), -Math.cos(a), -.1).normalize();
+    const n = Math.floor((.6 + .8 * s) / .1);
+    for (let j = 0; j < n; j++) { const m = new THREE.Mesh(linkGeo, j === n - 1 ? glow : metal); m.position.copy(top).addScaledVector(d, .05 + j * .1); m.quaternion.setFromUnitVectors(up, d); m.rotateY(j % 2 ? Math.PI / 2 : 0); root.add(m); }
+    const tip = shard(.3 + .12 * s, .06, 300 + i + (side > 0 ? 0 : 40), 2); tip.position.copy(top).addScaledVector(d, .05 + n * .1); tip.quaternion.setFromUnitVectors(up, d); root.add(tip);
+  }
+  return root;
+}
 const WINGS = {
   galaxie: {name: 'Galaxie-Federn', sub: 'Federn mit Nebel', make: s => featherWing(s, 'galaxie')},
   kristallfeder: {name: 'Kristall-Federn', sub: 'Splitter als Federn', make: crystalFeatherWing},
@@ -332,6 +354,7 @@ const WINGS = {
   neon: {name: 'Neon-Federn', sub: 'Leuchtende Umrisse', make: s => featherWing(s, 'neon')},
   engel: {name: 'Engel', sub: 'Hell, weiche Federn', make: s => featherWing(s, 'engel')},
   schmetterling: {name: 'Schmetterling', sub: 'Galaxie-Flächen', make: butterflyWing},
+  ketten: {name: 'Ketten-Flügel', sub: 'Ketten mit Kristallspitzen', make: chainWing},
 };
 
 // ============================================================ CAPES
@@ -369,6 +392,12 @@ function capePaint(kind) {
       for (let i = 0; i < 4; i++) sparkle(g, w * (.2 + r() * .6), h * (.6 + r() * .3), 8 + r() * 8);
     }
     if (kind === 'sterne') for (let i = 0; i < 8; i++) sparkle(g, r() * w, r() * h, 10 + r() * 14);
+    if (kind === 'monogramm') {
+      g.globalCompositeOperation = 'lighter'; g.drawImage(veinCanvas(8, 22, 256), 0, 0, w, h); g.globalCompositeOperation = 'source-over';
+      g.font = `900 ${h * .5}px "Sora","Segoe UI",sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.shadowColor = T.vein; g.shadowBlur = 40; g.fillStyle = T.light; g.fillText('B', w / 2, h * .47);
+      g.shadowBlur = 0; g.lineWidth = 6; g.strokeStyle = T.tip; g.strokeText('B', w / 2, h * .47);
+    }
     g.strokeStyle = T.edge; g.lineWidth = 10; g.strokeRect(5, 5, w - 10, h - 10);
   };
 }
@@ -389,11 +418,15 @@ function cape(kind) {
   const outer = new THREE.Mesh(mk(1), galaxyMat(tex, .6)); outer.rotation.y = Math.PI;          // Aussenseite zeigt nach hinten
   const inner = new THREE.Mesh(mk(-1), new THREE.MeshStandardMaterial({color: T.body, roughness: .8})); inner.position.z = .004;
   g.add(outer, inner);
+  const fp = []; for (const [x, y] of [[-W / 2, 0], [W / 2, 0], [W / 2, -H], [-W / 2, -H]]) fp.push(new THREE.Vector3(x, y, 0));
+  const frame = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(fp.map(v => { const bend = v.y * v.y * .3 - v.y * .1; return new THREE.Vector3(v.x, v.y, -bend - .006); }), true, 'catmullrom', 0), 80, .008, 6, true), glowMat(T.tip, 1.4));
+  g.add(frame);
   g.rotation.x = .1;
   g.position.set(0, 24 * px, -2.3 * px);
   return g;
 }
 const CAPES = {
+  monogramm: {name: 'Kristall-B', sub: 'Dein Monogramm', make: () => cape('monogramm')},
   planet: {name: 'Galaxie-Planet', sub: 'Planet mit Ring', make: () => cape('planet')},
   adern: {name: 'Kristall-Adern', sub: 'Leuchtende Risse', make: () => cape('adern')},
   sterne: {name: 'Sternennebel', sub: 'Nebel und Funken', make: () => cape('sterne')},
@@ -462,12 +495,28 @@ function shieldNeon() {
   const sm = new THREE.Mesh(new THREE.ShapeGeometry(star), glowMat(T.light, 2.4)); sm.position.z = .13; g.add(sm);
   return g;
 }
+function tallShape(w = .62, h = 1.12) {
+  const pts = [], n = 40;
+  for (let i = 0; i <= n; i++) { const t = i / n; pts.push(new THREE.Vector2(w / 2 - w * t, h / 2 + .05 * Math.cos((t - .5) * Math.PI))); }
+  for (let i = 1; i <= n; i++) { const t = i / n, k = Math.max(0, (t - .42) / .58); pts.push(new THREE.Vector2(-w / 2 * (1 - Math.pow(k, 1.7)), h / 2 - h * t)); }
+  for (let i = n - 1; i > 0; i--) { const t = i / n, k = Math.max(0, (t - .42) / .58); pts.push(new THREE.Vector2(w / 2 * (1 - Math.pow(k, 1.7)), h / 2 - h * t)); }
+  return new THREE.Shape(pts);
+}
+function tallShield(face, rimCol, rimK, rimMat = null) {
+  const g = new THREE.Group(), s = tallShape();
+  g.add(shieldBody(face, s, .85));
+  const ring = rimMat ? new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(s.getPoints(120).map(p => new THREE.Vector3(p.x * 1.03, p.y * 1.03, .15)), true), 200, .024, 8, true), rimMat) : rimTube(s, 1.03, .15, rimCol, .022, rimK);
+  g.add(ring);
+  const inner = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(s.getPoints(120).map(p => new THREE.Vector3(p.x * .8, p.y * .8 + .03, .16)), true), 200, .009, 6, true), rimMat || glowMat(rimCol, rimK * .8));
+  g.add(inner);
+  const boss = new THREE.Mesh(new THREE.SphereGeometry(.07, 24, 16), rimMat || glowMat(T.light, rimK)); boss.scale.z = .5; boss.position.set(0, .08, .17); g.add(boss);
+  g.scale.setScalar(1.25); return g;
+}
 const SHIELDS = {
-  kristall: {name: 'Kristall-Adern', sub: 'Mit Kristall-Flügeln', make: shieldCrystal},
-  galaxie: {name: 'Galaxie mit Flügeln', sub: 'Federn an den Seiten', make: shieldGalaxy},
-  rund: {name: 'Rundschild', sub: 'Kristallkern, Nieten', make: shieldRound},
-  drache: {name: 'Drachenschuppen', sub: 'Goldrand', make: shieldScale},
-  neon: {name: 'Neon', sub: 'Drei Leuchtrahmen', make: shieldNeon},
+  kristall: {name: 'Kristall-Adern', sub: 'Leuchtende Risse', make: () => { const m = crystalMat(1, 1.6); m.flatShading = false; return tallShield(m, T.tip, 1.2); }},
+  galaxie: {name: 'Galaxie', sub: 'Nebel und Sterne', make: () => tallShield(galaxyMat(galaxyTex(44, 512, 512, null, 'sh'), .45), T.vein, 1.2)},
+  dark: {name: 'Dark-Metall', sub: 'Schwarz mit Leuchtrand', make: () => tallShield(new THREE.MeshStandardMaterial({color: '#1d1828', roughness: .35, metalness: .5, emissive: T.deep, emissiveIntensity: .6}), T.tip, 1.6)},
+  gold: {name: 'Gold + Galaxie', sub: 'Goldrand', make: () => tallShield(galaxyMat(galaxyTex(47, 512, 512, null, 'sh2'), .35), T.vein, 1, goldMat())},
 };
 
 // ============================================================ HUETE / KRONEN
@@ -518,11 +567,7 @@ function hatOrbit() {
   g.position.y = HEAD_TOP - .2; g.userData.spin = true; return g;
 }
 const HATS = {
-  kristallkrone: {name: 'Kristall-Krone', sub: 'Splitter und Leuchtring', make: hatCrystalCrown},
-  heiligenschein: {name: 'Heiligenschein', sub: 'Schwebender Ring', make: hatHalo},
-  hoerner: {name: 'Kristall-Hörner', sub: 'Gebogen, mit Adern', make: hatHorns},
-  koenig: {name: 'Königskrone', sub: 'Gold und Edelsteine', make: hatKingCrown},
-  orbit: {name: 'Kristall-Orbit', sub: 'Kreisende Splitter', make: hatOrbit},
+  heiligenschein: {name: 'Heiligenschein', sub: 'Helligkeit unten einstellbar', make: hatHalo},
 };
 
 // ============================================================ SKIN + SPIELER
@@ -615,26 +660,22 @@ function totemOrb() {
 }
 const TOTEMS = {
   plushie: {name: 'Plushie (dein Skin)', sub: 'Weich, sitzend', make: totemPlush},
-  kristall: {name: 'Kristall-Cluster', sub: 'Splitter auf Stein', make: totemCluster},
-  idol: {name: 'Totem-Idol', sub: 'Leuchtaugen, Adern', make: totemIdol},
-  emblem: {name: 'Galaxie-Emblem', sub: 'Schild mit Flügeln', make: totemEmblem},
-  orb: {name: 'Planeten-Orb', sub: 'Ringe und Splitter', make: totemOrb},
 };
 
 // ============================================================ Kategorien
 const CATS = {
   wings: {name: 'Flügel', items: WINGS, player: true, cam: [195, 10, 9.5, 1.4]},
   capes: {name: 'Capes', items: CAPES, player: true, cam: [200, 8, 4.2, 1.15]},
-  shields: {name: 'Schilde', items: SHIELDS, player: false, cam: [15, 4, 5.4, 1.0]},
-  hats: {name: 'Hüte & Kronen', items: HATS, player: true, cam: [25, 16, 2.6, 1.85]},
-  totems: {name: 'Totems', items: TOTEMS, player: false, cam: [25, 8, 4.0, .85]},
+  shields: {name: 'Schilde', items: SHIELDS, player: false, cam: [15, 4, 5.2, 1.0]},
+  hats: {name: 'Heiligenschein', items: HATS, player: true, cam: [25, 16, 2.6, 1.85]},
+  totems: {name: 'Totem: Plushie', items: TOTEMS, player: false, cam: [25, 8, 4.0, .85]},
 };
 
 // ============================================================ Szene
 const Q = new URLSearchParams(location.search);
 const SHOT = Q.get('shot') === '1';
 if (SHOT) document.body.classList.add('shot');
-const state = {cat: Q.get('cat') || 'wings', item: Q.get('item') || null, theme: Q.get('theme') || 'lila', player: true, spin: !SHOT, anim: !SHOT};
+const state = {cat: Q.get('cat') || 'wings', item: Q.get('item') || null, theme: Q.get('theme') || 'lila', player: true, spin: !SHOT, anim: !SHOT, glow: +(Q.get('glow') || 1)};
 
 const stage = document.getElementById('stage');
 const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
@@ -677,7 +718,13 @@ function build() {
   for (let i = 0; i < 160; i++) sp.push((r0() - .5) * 7, r0() * 4, (r0() - .5) * 7);
   sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
   sparks = new THREE.Points(sg, new THREE.PointsMaterial({color: T.vein, size: .02})); scene.add(sparks);
+  applyGlow();
   document.getElementById('lblCat').textContent = cat.name; document.getElementById('lblName').textContent = it.name + ' · ' + T.name;
+}
+function applyGlow() {
+  content.traverse(o => { const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    for (const m of ms) { if (m.emissiveIntensity === undefined) continue; if (m.userData.baseGlow === undefined) m.userData.baseGlow = m.emissiveIntensity; m.emissiveIntensity = m.userData.baseGlow * state.glow; } });
+  bloom.strength = .6 * Math.min(1.6, .4 + .6 * state.glow);
 }
 function setCamera() {
   const [yawD, pitchD, dist, ty] = CATS[state.cat].cam;
@@ -710,6 +757,7 @@ function renderUI() {
 document.getElementById('optPlayer').onchange = e => { state.player = e.target.checked; build(); };
 document.getElementById('optSpin').onchange = e => { state.spin = e.target.checked; };
 document.getElementById('optAnim').onchange = e => { state.anim = e.target.checked; };
+document.getElementById('optGlow').oninput = e => { state.glow = +e.target.value; applyGlow(); };
 const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (reduce) { state.spin = false; state.anim = false; document.getElementById('optSpin').checked = false; document.getElementById('optAnim').checked = false; }
 
