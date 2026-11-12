@@ -449,3 +449,63 @@ def heater_pts(w=0.62, h=1.12, n=60, scale=1.0, dz=0.0):
         x = w / 2 * (1 - k ** 1.7)
         pts.append((x, z))
     return [(x * scale, z * scale + dz) for x, z in pts]
+
+
+# ------------------------------------------------------------------ Glas / Obsidian / Produktfoto
+def glass_mat(name, tint, rough=0.02):
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    b = m.node_tree.nodes["Principled BSDF"]
+    b.inputs["Base Color"].default_value = (*tint, 1)
+    b.inputs["Transmission Weight"].default_value = 1.0
+    b.inputs["Roughness"].default_value = rough
+    b.inputs["IOR"].default_value = 1.5
+    b.inputs["Coat Weight"].default_value = 0.5
+    return m
+
+
+def obsidian_mat(name, th, vein=3.0, scale=3.5):
+    m = crystal_mat(name, th, vein=vein, scale=scale)
+    b = m.node_tree.nodes["Principled BSDF"]
+    b.inputs["Transmission Weight"].default_value = 0.0
+    b.inputs["Base Color"].default_value = (0.006, 0.004, 0.01, 1)
+    b.inputs["Metallic"].default_value = 0.1
+    return m
+
+
+def round_rect(w, h, r=.06, n=8):
+    pts = []
+    for cx, cz, a0 in ((w / 2 - r, h / 2 - r, 0), (-w / 2 + r, h / 2 - r, 90), (-w / 2 + r, -h / 2 + r, 180), (w / 2 - r, -h / 2 + r, 270)):
+        for k in range(n + 1):
+            a = math.radians(a0 + 90 * k / n)
+            pts.append((cx + math.cos(a) * r, cz + math.sin(a) * r))
+    return pts
+
+
+def studio_floor(th, size=20):
+    bpy.ops.mesh.primitive_plane_add(size=size, location=(0, 0, 0))
+    m = simple_mat("floor", tuple(c * 0.6 for c in th["world"]), 0.12, 0.0)
+    m.node_tree.nodes["Principled BSDF"].inputs["Coat Weight"].default_value = 1.0
+    bpy.context.object.data.materials.append(m)
+
+
+def product_lights(th, k=1.0):
+    area_light("key", (-2.5, -4.5, 4), (math.radians(50), 0, math.radians(-30)), 220 * k, (1, .97, 1), 3)
+    area_light("rimL", (-3.5, 2.5, 2.2), (math.radians(-70), 0, math.radians(-125)), 260 * k, th["glow"], 2.5)
+    area_light("rimR", (3.5, 2.5, 2.2), (math.radians(-70), 0, math.radians(125)), 260 * k, th["glow"], 2.5)
+    area_light("top", (0, 0, 5), (0, 0, 0), 60 * k, (1, 1, 1), 6)
+
+
+def star4_pts(r, inner=.25):
+    pts = []
+    for k in range(8):
+        a = math.pi / 2 + k * math.pi / 4
+        rr = r if k % 2 == 0 else r * inner
+        pts.append((math.cos(a) * rr, math.sin(a) * rr))
+    return pts
+
+
+def crescent_pts(R=.2, r=.17, off=(.08, .05)):
+    pts = [(math.cos(math.radians(t)) * R, math.sin(math.radians(t)) * R) for t in range(30, 331, 5)]
+    pts += [(math.cos(math.radians(t)) * r + off[0], math.sin(math.radians(t)) * r + off[1]) for t in range(318, 41, -5)]
+    return pts
