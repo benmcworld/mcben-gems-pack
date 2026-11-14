@@ -66,11 +66,12 @@ public class CosmeticsLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
 			poseStack.rotateDegrees(Axis.YP, -flap);       // Fluegelschlag um die Wurzel
 			poseStack.translate(-ROOT_X, -ROOT_Y, -ROOT_Z);
 			poseStack.translate(0f, 0f, 0.02f);
-			collector.submitCustomGeometry(poseStack, RenderTypes.entityTranslucent(tex), (pose, vc) -> emit(pose, vc, feathers, 0xFFFFFFFF, light));
+			boolean mirrored = side > 0;   // gespiegelt -> Dreiecke andersherum ausgeben, damit Rueckseiten-Culling stimmt
+			collector.submitCustomGeometry(poseStack, RenderTypes.entityTranslucentCull(tex), (pose, vc) -> emit(pose, vc, feathers, 0xFFFFFFFF, light, mirrored));
 			if (cfg.brightness > 0.05f) {
-				collector.submitCustomGeometry(poseStack, RenderTypes.eyes(GLOW_TEX), (pose, vc) -> emit(pose, vc, feathers, 0xFF000000 | glow, LightCoordsUtil.FULL_BRIGHT));
+				collector.submitCustomGeometry(poseStack, RenderTypes.eyes(GLOW_TEX), (pose, vc) -> emit(pose, vc, feathers, 0xFF000000 | glow, LightCoordsUtil.FULL_BRIGHT, mirrored));
 				if (edge != null)
-					collector.submitCustomGeometry(poseStack, RenderTypes.eyes(WHITE_TEX), (pose, vc) -> emit(pose, vc, edge, 0xFF000000 | glow, LightCoordsUtil.FULL_BRIGHT));
+					collector.submitCustomGeometry(poseStack, RenderTypes.eyes(WHITE_TEX), (pose, vc) -> emit(pose, vc, edge, 0xFF000000 | glow, LightCoordsUtil.FULL_BRIGHT, mirrored));
 			}
 			poseStack.popPose();
 		}
@@ -86,17 +87,18 @@ public class CosmeticsLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
 		poseStack.translate(0f, -0.72f + (float) Math.sin(state.ageInTicks * 0.08f) * 0.025f, 0f);
 		poseStack.rotateDegrees(Axis.XP, 8f);
 		poseStack.rotateDegrees(Axis.YP, state.ageInTicks * 1.5f);
-		collector.submitCustomGeometry(poseStack, RenderTypes.eyes(WHITE_TEX), (pose, vc) -> emit(pose, vc, haloMesh, color, LightCoordsUtil.FULL_BRIGHT));
+		collector.submitCustomGeometry(poseStack, RenderTypes.eyes(WHITE_TEX), (pose, vc) -> emit(pose, vc, haloMesh, color, LightCoordsUtil.FULL_BRIGHT, false));
 		poseStack.popPose();
 	}
 
 	// ------------------------------------------------------------------ Helfer
 	/** Dreiecke als (entartete) Vierecke ausgeben – Entity-Rendertypen zeichnen Quads. */
-	private static void emit(PoseStack.Pose pose, VertexConsumer vc, float[] tris, int argb, int light) {
+	static void emit(PoseStack.Pose pose, VertexConsumer vc, float[] tris, int argb, int light, boolean reverse) {
 		int s = ObjMesh.STRIDE;
 		for (int t = 0; t + 3 * s <= tris.length; t += 3 * s) {
 			for (int k = 0; k < 4; k++) {
-				int i = t + Math.min(k, 2) * s;
+				int c = Math.min(k, 2);
+				int i = t + (reverse ? 2 - c : c) * s;
 				vc.addVertex(pose, tris[i], tris[i + 1], tris[i + 2])
 					.setColor(argb)
 					.setUv(tris[i + 3], tris[i + 4])

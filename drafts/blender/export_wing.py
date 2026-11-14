@@ -63,8 +63,8 @@ for o in objs:
             vlines.append(p); vn.append(nm); vt.append((uv[0], uv[1]))
             vi += 1
             idx.append(vi)
-        # Wicklung: Spiegelung (x und y negiert) -> Reihenfolge bleibt; Achsentausch y<->z kehrt um
-        faces[o["mat"]].append((idx[0], idx[2], idx[1]))
+        # Achsen-Umrechnung hat Determinante +1 -> Wicklung bleibt wie in Blender
+        faces[o["mat"]].append((idx[0], idx[1], idx[2]))
     ev.to_mesh_clear()
 
 with open(out, "w") as fh:

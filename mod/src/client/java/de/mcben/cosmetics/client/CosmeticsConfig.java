@@ -19,6 +19,8 @@ public class CosmeticsConfig {
 	public boolean flap = true;
 	public boolean halo = false;
 	public float brightness = 1.0f;   // 0.2 .. 2.0, gilt fuer Leuchten von Fluegeln und Heiligenschein
+	/** Leer = eigener Skin; sonst Spielername, dessen Skin das Plushie-Totem bekommt. */
+	public String plushieName = "";
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static CosmeticsConfig instance;

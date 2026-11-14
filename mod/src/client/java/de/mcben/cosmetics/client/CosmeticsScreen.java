@@ -3,6 +3,7 @@ package de.mcben.cosmetics.client;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -18,7 +19,7 @@ public class CosmeticsScreen extends Screen {
 	@Override
 	protected void init() {
 		CosmeticsConfig cfg = CosmeticsConfig.get();
-		int w = 220, x = width / 2 - w / 2, y = height / 2 - 70, h = 20, gap = 24;
+		int w = 220, x = width / 2 - w / 2, y = height / 2 - 82, h = 20, gap = 24;
 		addRenderableWidget(Button.builder(Component.literal("Flügel: " + CosmeticsConfig.label(cfg.wings)), b -> {
 			cfg.wings = CosmeticsConfig.next(CosmeticsConfig.WINGS, cfg.wings);
 			b.setMessage(Component.literal("Flügel: " + CosmeticsConfig.label(cfg.wings)));
@@ -44,8 +45,13 @@ public class CosmeticsScreen extends Screen {
 				cfg.brightness = (float) (0.2 + value * 1.8);
 			}
 		});
+		EditBox plush = new EditBox(font, x, y + 5 * gap + 12, w, h, Component.literal("Plushie-Skin"));
+		plush.setMaxLength(16);
+		plush.setValue(cfg.plushieName == null ? "" : cfg.plushieName);
+		plush.setResponder(v -> cfg.plushieName = v.trim());
+		addRenderableWidget(plush);
 		addRenderableWidget(Button.builder(Component.literal("Fertig"), b -> onClose())
-			.bounds(x, y + 5 * gap + 8, w, h).build());
+			.bounds(x, y + 6 * gap + 18, w, h).build());
 	}
 
 	private static Component onOff(String name, boolean on) {
@@ -55,7 +61,8 @@ public class CosmeticsScreen extends Screen {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		super.extractRenderState(g, mouseX, mouseY, delta);
-		g.centeredText(font, title, width / 2, height / 2 - 92, 0xFFFF6CF5);
+		g.centeredText(font, title, width / 2, height / 2 - 100, 0xFFFF6CF5);
+		g.centeredText(font, Component.literal("Plushie-Totem: Spielername (leer = dein Skin)"), width / 2, height / 2 - 82 + 5 * 24 + 2, 0xFFB8A8D0);
 		g.centeredText(font, Component.literal("Zum Ansehen in die 3rd-Person wechseln (F5)"), width / 2, height / 2 + 108, 0xFFB8A8D0);
 	}
 
