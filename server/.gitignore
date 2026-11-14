@@ -1,0 +1,9 @@
+mods/
+fabric-server-launch.jar
+world/
+logs/
+libraries/
+versions/
+.fabric/
+eula.txt
+*.jar

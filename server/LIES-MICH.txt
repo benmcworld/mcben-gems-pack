@@ -1,0 +1,37 @@
+McBen Server – Minecraft 26.3 – Java + Bedrock – 20 Spieler
+=============================================================
+
+Inhalt
+- Minecraft 26.3, Spielablauf Vanilla (Fabric nur als Unterbau)
+- Geyser + Floodgate: Bedrock-Spieler (Handy, Konsole, Windows) koennen OHNE Java-Account mitspielen
+- Ben1G ist Owner (Operator Stufe 4) und darf immer rein, auch wenn der Server voll ist
+- 20 Plaetze, Schwierigkeit normal, Ueberleben
+
+Starten (Mac)
+1. Java 25 installieren: https://adoptium.net/temurin/releases/?version=25 (macOS, .pkg)
+2. Den Ordner an einen festen Ort legen, z. B. Dokumente/McBen-Server
+3. Doppelklick auf "start.command"
+   - Falls der Mac sagt "kann nicht geoeffnet werden": Rechtsklick -> Oeffnen -> Oeffnen
+4. Beim ersten Start die Minecraft-EULA mit "ja" bestaetigen.
+   Der erste Start laedt Minecraft herunter und dauert etwas.
+5. Fertig, wenn "Done" im Fenster steht. Stoppen: "stop" eingeben.
+
+Verbinden
+- Du selbst (gleicher PC):  Java: localhost   |  Bedrock: 127.0.0.1, Port 19132
+- Im gleichen WLAN:         IP deines Macs (Systemeinstellungen -> WLAN -> Details)
+- Von aussen (Freunde):     deine oeffentliche IP oder ein playit.gg-Tunnel
+    Router-Portfreigabe:  25565 TCP (Java)  und  19132 UDP (Bedrock)
+
+Bedrock-Spieler erscheinen im Spiel mit einem Punkt vor dem Namen (z. B. ".Steve123").
+
+Admin-Befehle (als Ben1G)
+- /op <name>        anderen Admin-Rechte geben
+- /whitelist on     nur eingeladene Spieler (dann: /whitelist add <name>)
+- /gamemode creative
+- /difficulty hard
+
+Einstellungen aendern: server.properties (z. B. max-players, motd, difficulty)
+Bedrock-Einstellungen: config/Geyser-Fabric/config.yml
+
+Tipp: Damit Freunde den Server immer erreichen, muss der Mac an sein und darf nicht schlafen
+(Systemeinstellungen -> Energie -> "Ruhezustand verhindern").
