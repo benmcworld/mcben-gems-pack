@@ -1,0 +1,10 @@
+{
+	"schemaVersion": 1,
+	"id": "mcbencosmetics-test",
+	"version": "1.0.0",
+	"name": "McBen Cosmetics Test",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": ["de.mcben.cosmetics.test.CosmeticsGameTest"]
+	}
+}
