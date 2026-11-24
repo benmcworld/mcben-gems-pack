@@ -1,0 +1,251 @@
+<title>McBen Pack-Editor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: Spielansicht (16:9) links, Regler rechts; darunter Tabs fuer Mod-Screenshots und Anleitung. Bewusst nur dunkel (Spiele-Werkzeug). */
+:root{
+  --bg:#0d0a14; --panel:#16111f; --panel2:#1e1729; --line:#2e2440; --text:#f1ebfa; --muted:#a294bb;
+  --accent:#d65cff; --accent2:#ff7ad9; --ok:#7dff8a;
+  --display:"Sora","Segoe UI",system-ui,sans-serif; --body:"Inter","Segoe UI",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+h1{margin:0;font-family:var(--display);font-size:24px;letter-spacing:.2px;text-wrap:balance}
+h1 b{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+header p{margin:0;color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:600 14px var(--body);color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:linear-gradient(90deg,var(--accent),var(--accent2));border-color:transparent;color:#1a0b22}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}
+.stage{background:#000;border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
+.stage canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.stage .tag{position:absolute;left:12px;top:10px;font:500 12px var(--mono);color:#fff;background:rgba(0,0,0,.55);padding:4px 9px;border-radius:999px}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:16px;min-width:0}
+h2{margin:0 0 8px;font:700 11px var(--body);letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{font:600 13px var(--body);color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:7px}
+.chips button i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.chips button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.row{display:grid;grid-template-columns:92px minmax(0,1fr) 44px;align-items:center;gap:10px}
+.row label{color:var(--muted)}
+.row output{font:500 12px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 8px;width:100%}
+.check{display:flex;gap:8px;align-items:center;color:var(--muted)}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.slots{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.slots button{font:600 12px var(--mono);color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 0;cursor:pointer}
+.slots button[aria-pressed="true"]{background:var(--accent);color:#1a0b22;border-color:transparent}
+.hint{margin:0;color:var(--muted);font-size:12.5px}
+.hint code{font:500 12px var(--mono);color:var(--text);background:var(--panel2);padding:1px 5px;border-radius:5px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+figure img{display:block;width:100%;height:auto}
+figcaption{padding:8px 12px;color:var(--muted);font-size:13px}
+.callout{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.callout a{color:var(--accent2);font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.card h3{margin:0 0 8px;font:700 16px var(--display)}
+.card p,.card li{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.card ul{margin:0;padding-left:18px}
+.card code{font:500 12px var(--mono);color:var(--text);background:var(--panel2);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.card .say{display:block;background:var(--panel2);border-left:3px solid var(--accent);padding:6px 10px;border-radius:6px;margin:6px 0;color:var(--text)}
+[hidden]{display:none!important}
+@media (max-width:900px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><b>McBen</b> Pack-Editor</h1>
+    <p>Dein Resource Pack mit den echten Pack-Bildern, so wie es in Minecraft aussieht.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-hud" aria-selected="true" aria-controls="p-hud">HUD im Spiel</button>
+    <button role="tab" id="t-mod" aria-selected="false" aria-controls="p-mod">Cosmetics (Mod)</button>
+    <button role="tab" id="t-edit" aria-selected="false" aria-controls="p-edit">So bearbeitest du es</button>
+  </div>
+
+  <section id="p-hud" role="tabpanel" aria-labelledby="t-hud">
+    <div class="grid">
+      <div class="stage"><canvas id="cv" width="960" height="540" aria-label="Vorschau des HUD im Spiel"></canvas><span class="tag" id="tag">McBen-HUD-Lila</span></div>
+      <aside>
+        <div><h2>Pack-Farbe</h2><div class="chips" id="themes"></div></div>
+        <div>
+          <h2>Eigene Farbe ausprobieren</h2>
+          <div class="row"><label for="hue">Farbton</label><input type="range" id="hue" min="-180" max="180" step="5" value="0"><output id="hueV">0°</output></div>
+          <p class="hint">Gefällt dir eine Farbe? Schreib mir z. B. <code id="hueSay">„Lila, Farbton 0°“</code>, dann baue ich daraus ein eigenes Pack.</p>
+        </div>
+        <div><h2>Ausgewählter Slot</h2><div class="slots" id="slots"></div></div>
+        <div>
+          <h2>Anzeigen</h2>
+          <div class="row"><label for="hp">Leben</label><input type="range" id="hp" min="0" max="20" value="19"><output id="hpV">19</output></div>
+          <div class="row"><label for="ar">Rüstung</label><input type="range" id="ar" min="0" max="20" value="15"><output id="arV">15</output></div>
+          <div class="row"><label for="fd">Hunger</label><input type="range" id="fd" min="0" max="20" value="17"><output id="fdV">17</output></div>
+          <div class="row"><label for="xp">XP</label><input type="range" id="xp" min="0" max="100" value="45"><output id="xpV">45%</output></div>
+          <div class="row"><label for="hk">Herzen</label>
+            <select id="hk"><option value="">Normal</option><option value="poisoned_">Vergiftet</option><option value="withered_">Wither</option><option value="frozen_">Erfroren</option><option value="absorbing_">Absorption</option><option value="hardcore_">Hardcore</option></select><span></span></div>
+          <label class="check"><input type="checkbox" id="hunger"> Hunger-Effekt (grüne Äpfel)</label>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="p-mod" role="tabpanel" aria-labelledby="t-mod" hidden>
+    <div class="callout">
+      <span>Echte Screenshots aus Minecraft 26.3 mit deiner Mod <code>mcben-cosmetics-0.1.0.jar</code>.</span>
+      <a href="https://claude.ai/artifact/RPcKvb3dZA3MyWj9krgudW" target="_blank" rel="noopener">3D-Vorschau zum Drehen öffnen →</a>
+    </div>
+    <div class="gallery" id="gallery" style="margin-top:14px"></div>
+  </section>
+
+  <section id="p-edit" role="tabpanel" aria-labelledby="t-edit" hidden>
+    <div class="cards">
+      <div class="card">
+        <h3>1 · Im Spiel</h3>
+        <p>Die Mod hat ein eigenes Menü. Drück in Minecraft <code>K</code>:</p>
+        <ul>
+          <li>Flügel: Aus, Galaxie-Federn, Engel</li>
+          <li>Farbe: Lila, Grün, Blau, Rot, Dark Edition, Gold</li>
+          <li>Flügelschlag und Heiligenschein an/aus</li>
+          <li>Leuchtstärke</li>
+          <li>Plushie-Totem: leer = dein Skin, oder ein Spielername</li>
+        </ul>
+        <p>Mit <code>F5</code> siehst du dich von außen.</p>
+      </div>
+      <div class="card">
+        <h3>2 · Mir sagen</h3>
+        <p>Am einfachsten: schreib mir hier, was anders sein soll. Ich ändere es, teste es in Minecraft und schicke dir das neue Pack. Zum Beispiel:</p>
+        <span class="say">„Mach die Hotbar etwas durchsichtiger.“</span>
+        <span class="say">„Neues HUD in Türkis: Lila mit Farbton −60°.“</span>
+        <span class="say">„Die Herzen sollen eckig sein, wie Design 1.“</span>
+        <span class="say">„Flügel kleiner und mehr Glitzer.“</span>
+      </div>
+      <div class="card">
+        <h3>3 · Selbst in den Dateien</h3>
+        <p>Alles liegt in deinem GitHub-Projekt <code>benmcworld/mcben-gems-pack</code>:</p>
+        <ul>
+          <li>HUD-Farben: <code>drafts/hud_galaxy.py</code> (THEMES)</li>
+          <li>Welche Designs: <code>drafts/hud_pack.py</code> (CHOICE)</li>
+          <li>Neu bauen: <code>python3 build.py</code> → Zips in <code>dist/</code></li>
+          <li>Flügel-Modell: <code>drafts/blender/export_wing.py</code></li>
+          <li>Mod-Code: <code>mod/src/client/java/…</code>, bauen mit <code>gradle build</code></li>
+          <li>Mod-Einstellungen: <code>config/mcbencosmetics.json</code> im Minecraft-Ordner</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/*__DATA__*/
+const GUI_W = 320, GUI_H = 180, S = 3;
+const state = {theme: "Lila", hue: 0, slot: 3, hp: 19, ar: 15, fd: 17, xp: 45, hk: "", hunger: false};
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+
+// ---------- Bilder laden ----------
+const imgCache = new Map();
+function img(src) {
+  if (!imgCache.has(src)) { const i = new Image(); i.src = src; i.onload = draw; imgCache.set(src, i); }
+  return imgCache.get(src);
+}
+const bg = img(BG);
+
+// ---------- Farbton verschieben (pro Bild zwischengespeichert) ----------
+const tintCache = new Map();
+function hueShift(r, g, b, deg) {
+  const max = Math.max(r, g, b) / 255, min = Math.min(r, g, b) / 255, l = (max + min) / 2;
+  if (max === min) return [r, g, b];
+  const d = max - min, s = l > .5 ? d / (2 - max - min) : d / (max + min);
+  let h; const R = r / 255, G = g / 255, B = b / 255;
+  if (max === R) h = (G - B) / d + (G < B ? 6 : 0); else if (max === G) h = (B - R) / d + 2; else h = (R - G) / d + 4;
+  h = ((h / 6 + deg / 360) % 1 + 1) % 1;
+  const q = l < .5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  const f = t => { t = (t % 1 + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
+  return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255];
+}
+function sprite(name) {
+  const src = PACKS[state.theme][name];
+  const base = img(src);
+  if (!state.hue || !base.complete || /poisoned|withered|frozen|absorbing|_hunger/.test(name)) return base;
+  const key = src.length + name + state.theme + state.hue;
+  if (tintCache.has(key)) return tintCache.get(key);
+  const c = document.createElement("canvas"); c.width = base.naturalWidth; c.height = base.naturalHeight;
+  const x = c.getContext("2d"); x.drawImage(base, 0, 0);
+  const d = x.getImageData(0, 0, c.width, c.height);
+  for (let i = 0; i < d.data.length; i += 4) { const [r, g, b] = hueShift(d.data[i], d.data[i + 1], d.data[i + 2], state.hue); d.data[i] = r; d.data[i + 1] = g; d.data[i + 2] = b; }
+  x.putImageData(d, 0, 0); tintCache.set(key, c); return c;
+}
+const put = (im, x, y, w, h) => { if (im && (im.width || im.naturalWidth)) ctx.drawImage(im, x * S, y * S, w * S, h * S); };
+
+// ---------- Zeichnen wie im Spiel (Vanilla-Positionen) ----------
+function draw() {
+  ctx.imageSmoothingEnabled = false;
+  if (bg.complete) { const r = Math.max(cv.width / bg.naturalWidth, cv.height / bg.naturalHeight); ctx.drawImage(bg, 0, 0, bg.naturalWidth * r, bg.naturalHeight * r); }
+  const L = GUI_W / 2 - 91, H = GUI_H;
+  put(sprite("hotbar"), L, H - 22, 182, 22);
+  put(sprite("hotbar_selection"), L - 1 + (state.slot - 1) * 20, H - 23, 24, 23);
+  put(sprite("experience_bar_background"), L, H - 29, 182, 5);
+  const prog = sprite("experience_bar_progress"), pw = Math.round(182 * state.xp / 100);
+  if (pw > 0 && (prog.width || prog.naturalWidth)) {
+    const sw = (prog.naturalWidth || prog.width) * state.xp / 100;
+    ctx.drawImage(prog, 0, 0, sw, prog.naturalHeight || prog.height, L * S, (H - 29) * S, pw * S, 5 * S);
+  }
+  // Level-Zahl (in Minecraft immer gruen)
+  ctx.font = `bold ${8 * S}px ${getComputedStyle(document.body).getPropertyValue("--mono")}`; ctx.textAlign = "center";
+  ctx.fillStyle = "#000"; ctx.fillText("35", GUI_W / 2 * S + S, (H - 30) * S + S); ctx.fillStyle = "#80ff20"; ctx.fillText("35", GUI_W / 2 * S, (H - 30) * S);
+  const pre = state.hk;
+  for (let i = 0; i < 10; i++) {
+    const x = L + i * 8, y = H - 39;
+    put(sprite("heart/container"), x, y, 9, 9);
+    if (state.hp >= 2 * i + 2) put(sprite(`heart/${pre}full`), x, y, 9, 9);
+    else if (state.hp === 2 * i + 1) put(sprite(`heart/${pre}half`), x, y, 9, 9);
+    if (state.ar > 0) put(sprite(state.ar >= 2 * i + 2 ? "armor_full" : state.ar === 2 * i + 1 ? "armor_half" : "armor_empty"), x, H - 49, 9, 9);
+    const fx = GUI_W / 2 + 91 - 9 - i * 8, suf = state.hunger ? "_hunger" : "";
+    put(sprite("food_empty" + suf), fx, y, 9, 9);
+    if (state.fd >= 2 * i + 2) put(sprite("food_full" + suf), fx, y, 9, 9);
+    else if (state.fd === 2 * i + 1) put(sprite("food_half" + suf), fx, y, 9, 9);
+  }
+  document.getElementById("tag").textContent = "McBen-HUD-" + state.theme + (state.hue ? `  ·  Farbton ${state.hue > 0 ? "+" : ""}${state.hue}°` : "");
+}
+
+// ---------- Bedienung ----------
+const swatch = {"Lila": "#c45cff", "Schwarz-Weiß": "#e8e8ee", "Blau": "#3d9bff", "Rot": "#ff3d58", "Grün": "#3dff7f"};
+const themes = document.getElementById("themes");
+for (const t of Object.keys(PACKS)) {
+  const b = document.createElement("button"); b.innerHTML = `<i style="background:${swatch[t]}"></i>${t}`; b.setAttribute("aria-pressed", t === state.theme);
+  b.onclick = () => { state.theme = t; [...themes.children].forEach(c => c.setAttribute("aria-pressed", c === b)); for (const s of Object.values(PACKS[t])) img(s); sayUpdate(); draw(); };
+  themes.append(b);
+}
+const slots = document.getElementById("slots");
+for (let i = 1; i <= 9; i++) {
+  const b = document.createElement("button"); b.textContent = i; b.setAttribute("aria-pressed", i === state.slot); b.setAttribute("aria-label", "Slot " + i);
+  b.onclick = () => { state.slot = i; [...slots.children].forEach(c => c.setAttribute("aria-pressed", c === b)); draw(); };
+  slots.append(b);
+}
+function bind(id, key, fmt = v => v) {
+  const el = document.getElementById(id), out = document.getElementById(id + "V");
+  el.oninput = () => { state[key] = +el.value; if (out) out.textContent = fmt(+el.value); if (key === "hue") sayUpdate(); draw(); };
+}
+bind("hp", "hp"); bind("ar", "ar"); bind("fd", "fd"); bind("xp", "xp", v => v + "%"); bind("hue", "hue", v => (v > 0 ? "+" : "") + v + "°");
+document.getElementById("hk").onchange = e => { state.hk = e.target.value; draw(); };
+document.getElementById("hunger").onchange = e => { state.hunger = e.target.checked; draw(); };
+function sayUpdate() { document.getElementById("hueSay").textContent = `„${state.theme}, Farbton ${state.hue > 0 ? "+" : ""}${state.hue}°“`; }
+
+for (const s of Object.values(PACKS[state.theme])) img(s);
+draw();
+
+// Tabs
+const tabs = [["t-hud", "p-hud"], ["t-mod", "p-mod"], ["t-edit", "p-edit"]];
+for (const [t, p] of tabs) document.getElementById(t).onclick = () => {
+  for (const [t2, p2] of tabs) { document.getElementById(t2).setAttribute("aria-selected", t2 === t); document.getElementById(p2).hidden = p2 !== p; }
+};
+const gal = document.getElementById("gallery");
+for (const g of GALLERY) { const f = document.createElement("figure"); f.innerHTML = `<img src="${g.src}" alt="${g.cap}" loading="lazy"><figcaption>${g.cap}</figcaption>`; gal.append(f); }
+</script>
