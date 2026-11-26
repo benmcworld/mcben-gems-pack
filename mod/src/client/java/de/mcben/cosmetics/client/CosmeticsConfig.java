@@ -31,9 +31,9 @@ public class CosmeticsConfig {
 	public boolean keystrokes = true;
 	public boolean armorHud = true;
 	public boolean lowFire = true;
-	public float fireOffset = 0.3f;      // 0 .. 0.5 (Bildschirm-Anteil nach unten)
+	public float fireOffset = 0.15f;     // 0 .. 0.4 (nach unten)
 	public boolean lowShield = true;
-	public float shieldOffset = 0.15f;   // 0 .. 0.4 (Bloecke nach unten)
+	public float shieldOffset = 0.1f;    // 0 .. 0.4 (Bloecke nach unten)
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static CosmeticsConfig instance;

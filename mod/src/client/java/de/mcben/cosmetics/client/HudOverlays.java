@@ -26,7 +26,7 @@ public final class HudOverlays {
 		CosmeticsConfig c = CosmeticsConfig.get();
 		trackClicks(mc);
 		if (c.infoHud) info(g, mc, p);
-		if (c.keystrokes) keystrokes(g, mc);
+		if (c.keystrokes) keystrokes(g, mc, c.infoHud ? 58 : 4);
 		if (c.armorHud) armor(g, mc, p);
 		if (McBenCosmeticsClient.zoomAmount() > 1.001f) {
 			String z = "Zoom " + Math.round(McBenCosmeticsClient.zoomAmount() * 10) / 10f + "x";
@@ -76,9 +76,9 @@ public final class HudOverlays {
 		while (!rightClicks.isEmpty() && now - rightClicks.peekFirst() > 1000) rightClicks.pollFirst();
 	}
 
-	private static void keystrokes(GuiGraphicsExtractor g, Minecraft mc) {
+	private static void keystrokes(GuiGraphicsExtractor g, Minecraft mc, int y0) {
 		int s = 20, gap = 2;
-		int x0 = g.guiWidth() - (3 * s + 2 * gap) - 4, y0 = 4;
+		int x0 = 4;
 		key(g, mc, "W", mc.options.keyUp.isDown(), x0 + s + gap, y0, s, s);
 		key(g, mc, "A", mc.options.keyLeft.isDown(), x0, y0 + s + gap, s, s);
 		key(g, mc, "S", mc.options.keyDown.isDown(), x0 + s + gap, y0 + s + gap, s, s);

@@ -89,7 +89,7 @@ public class CosmeticsGameTest implements FabricClientGameTest {
 			ctx.runOnClient(mc -> CosmeticsConfig.get().lowShield = false);
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("15_schild_normal");
-			ctx.runOnClient(mc -> CosmeticsConfig.get().lowShield = true);
+			ctx.runOnClient(mc -> { CosmeticsConfig.get().lowShield = true; CosmeticsConfig.get().shieldOffset = 0.1f; });
 			ctx.waitTicks(5);
 			ctx.takeScreenshot("16_schild_low");
 
@@ -99,7 +99,7 @@ public class CosmeticsGameTest implements FabricClientGameTest {
 			ctx.runOnClient(mc -> CosmeticsConfig.get().lowFire = false);
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("17_feuer_normal");
-			ctx.runOnClient(mc -> CosmeticsConfig.get().lowFire = true);
+			ctx.runOnClient(mc -> { CosmeticsConfig.get().lowFire = true; CosmeticsConfig.get().fireOffset = 0.15f; });
 			ctx.waitTicks(5);
 			ctx.takeScreenshot("18_feuer_low");
 		}

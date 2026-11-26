@@ -31,7 +31,7 @@ public class ModsScreen extends Screen {
 		toggle(xr, top, w, "Keystrokes + CPS", () -> c.keystrokes, v -> c.keystrokes = v);
 		toggle(xr, top + gap, w, "Rüstungs-Anzeige", () -> c.armorHud, v -> c.armorHud = v);
 		toggle(xr, top + 2 * gap, w, "Low Fire", () -> c.lowFire, v -> c.lowFire = v);
-		slider(xr, top + 3 * gap, w, "Feuer tiefer", c.fireOffset, 0f, 0.5f, v -> c.fireOffset = v, v -> Math.round(v * 200) + " %");
+		slider(xr, top + 3 * gap, w, "Feuer tiefer", c.fireOffset, 0f, 0.4f, v -> c.fireOffset = v, v -> Math.round(v * 250) + " %");
 		toggle(xr, top + 4 * gap, w, "Low Shield", () -> c.lowShield, v -> c.lowShield = v);
 		slider(xr, top + 5 * gap, w, "Schild tiefer", c.shieldOffset, 0f, 0.4f, v -> c.shieldOffset = v, v -> Math.round(v * 250) + " %");
 		addRenderableWidget(Button.builder(Component.literal("Fertig"), b -> onClose()).bounds(width / 2 - 100, top + 6 * gap + 14, 200, 20).build());
