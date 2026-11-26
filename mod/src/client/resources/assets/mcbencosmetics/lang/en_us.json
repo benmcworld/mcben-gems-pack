@@ -1,4 +1,6 @@
 {
-	"key.mcbencosmetics.menu": "Open cosmetics menu",
-	"key.category.mcbencosmetics.main": "McBen Cosmetics"
+ "key.mcbencosmetics.menu": "Open cosmetics menu",
+ "key.category.mcbencosmetics.main": "McBen Cosmetics",
+ "key.mcbencosmetics.fullbright": "Toggle fullbright",
+ "key.mcbencosmetics.zoom": "Zoom (hold)"
 }

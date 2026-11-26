@@ -22,6 +22,19 @@ public class CosmeticsConfig {
 	/** Leer = eigener Skin; sonst Spielername, dessen Skin das Plushie-Totem bekommt. */
 	public String plushieName = "";
 
+	// ---- Mods (Verbesserungen) ----
+	public boolean fullbright = false;
+	public boolean zoom = true;
+	public float zoomFactor = 4f;        // 2 .. 10
+	public boolean autoSprint = false;
+	public boolean infoHud = true;
+	public boolean keystrokes = true;
+	public boolean armorHud = true;
+	public boolean lowFire = true;
+	public float fireOffset = 0.3f;      // 0 .. 0.5 (Bildschirm-Anteil nach unten)
+	public boolean lowShield = true;
+	public float shieldOffset = 0.15f;   // 0 .. 0.4 (Bloecke nach unten)
+
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static CosmeticsConfig instance;
 
