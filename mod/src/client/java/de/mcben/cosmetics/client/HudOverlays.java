@@ -32,7 +32,7 @@ public final class HudOverlays {
 		int y = 4;
 		if (c.infoHud) y = info(g, mc, p, c) + 4;
 		if (c.keystrokes) { keystrokes(g, mc, y); y += 3 * 22 + 12 + 6; }
-		if (c.effectsHud) effects(g, mc, p, y);
+		if (c.effectsHud) effects(g, mc, p, 4);
 		if (c.armorHud) armor(g, mc, p);
 		if (McBenCosmeticsClient.zoomAmount() > 1.001f) {
 			String z = "Zoom " + Math.round(McBenCosmeticsClient.zoomAmount() * 10) / 10f + "x";
@@ -86,11 +86,11 @@ public final class HudOverlays {
 			if (e.isInfiniteDuration()) time = "∞";
 			else { int sec = e.getDuration() / 20; time = sec / 60 + ":" + String.format("%02d", sec % 60); }
 			int col = 0xFF000000 | e.getEffect().value().getColor();
-			int w = f.width(name + "  " + time) + 10;
-			g.fill(4, y, 4 + w, y + 13, BOX);
-			g.fill(4, y, 6, y + 13, col);
-			g.text(f, name, 10, y + 3, TEXT);
-			g.text(f, time, 10 + f.width(name + "  "), y + 3, e.endsWithin(200) ? 0xFFFF5A5A : ACCENT);
+			int w = f.width(name + "  " + time) + 10, x = g.guiWidth() - w - 4;
+			g.fill(x, y, x + w, y + 13, BOX);
+			g.fill(x + w - 2, y, x + w, y + 13, col);
+			g.text(f, name, x + 4, y + 3, TEXT);
+			g.text(f, time, x + 4 + f.width(name + "  "), y + 3, e.endsWithin(200) ? 0xFFFF5A5A : ACCENT);
 			y += 15;
 		}
 	}
