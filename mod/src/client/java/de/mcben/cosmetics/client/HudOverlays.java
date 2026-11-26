@@ -5,10 +5,14 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 
+import java.time.LocalTime;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Deque;
 
 /** Info-Anzeige (FPS, Ping, Koordinaten), Keystrokes mit CPS, Ruestungs-Anzeige. */
@@ -25,8 +29,10 @@ public final class HudOverlays {
 		if (p == null) return;
 		CosmeticsConfig c = CosmeticsConfig.get();
 		trackClicks(mc);
-		if (c.infoHud) info(g, mc, p);
-		if (c.keystrokes) keystrokes(g, mc, c.infoHud ? 58 : 4);
+		int y = 4;
+		if (c.infoHud) y = info(g, mc, p, c) + 4;
+		if (c.keystrokes) { keystrokes(g, mc, y); y += 3 * 22 + 12 + 6; }
+		if (c.effectsHud) effects(g, mc, p, y);
 		if (c.armorHud) armor(g, mc, p);
 		if (McBenCosmeticsClient.zoomAmount() > 1.001f) {
 			String z = "Zoom " + Math.round(McBenCosmeticsClient.zoomAmount() * 10) / 10f + "x";
@@ -35,28 +41,78 @@ public final class HudOverlays {
 	}
 
 	// ------------------------------------------------------------------ Info
-	private static void info(GuiGraphicsExtractor g, Minecraft mc, LocalPlayer p) {
+	private static int info(GuiGraphicsExtractor g, Minecraft mc, LocalPlayer p, CosmeticsConfig c) {
 		Font f = mc.font;
 		int ping = -1;
 		if (mc.getConnection() != null) {
 			PlayerInfo pi = mc.getConnection().getPlayerInfo(p.getUUID());
 			if (pi != null) ping = pi.getLatency();
 		}
-		String[][] rows = {
-			{"FPS", String.valueOf(mc.getFps())},
-			{"Ping", ping < 0 ? "–" : ping + " ms"},
-			{"XYZ", (int) Math.floor(p.getX()) + " / " + (int) Math.floor(p.getY()) + " / " + (int) Math.floor(p.getZ())},
-			{"Richtung", direction(p.getYRot())},
-		};
+		List<String[]> rows = new ArrayList<>();
+		rows.add(new String[]{"FPS", String.valueOf(mc.getFps())});
+		rows.add(new String[]{"Ping", ping < 0 ? "–" : ping + " ms"});
+		rows.add(new String[]{"XYZ", (int) Math.floor(p.getX()) + " / " + (int) Math.floor(p.getY()) + " / " + (int) Math.floor(p.getZ())});
+		rows.add(new String[]{"Richtung", direction(p.getYRot())});
+		if (c.clockHud) {
+			LocalTime now = LocalTime.now();
+			rows.add(new String[]{"Uhr", String.format("%02d:%02d", now.getHour(), now.getMinute())});
+			if (mc.level != null) {
+				long t = Math.floorMod(mc.level.getOverworldClockTime(), 24000L);
+				int h = (int) ((t / 1000 + 6) % 24), m = (int) (t % 1000 * 60 / 1000);
+				rows.add(new String[]{"MC-Zeit", String.format("%02d:%02d", h, m) + (t >= 13000 && t < 23000 ? "  Nacht" : "")});
+			}
+		}
+		if (c.deathCoords && c.lastDeath != null && !c.lastDeath.isEmpty()) rows.add(new String[]{"Tod", c.lastDeath});
 		int w = 0;
 		for (String[] r : rows) w = Math.max(w, f.width(r[0] + "  " + r[1]));
-		int x = 4, y = 4, h = rows.length * 11 + 5;
+		int x = 4, y = 4, h = rows.size() * 11 + 5;
 		g.fill(x, y, x + w + 10, y + h, BOX);
 		g.fill(x, y, x + 2, y + h, BOX_ON);
-		for (int i = 0; i < rows.length; i++) {
-			g.text(f, rows[i][0], x + 6, y + 4 + i * 11, ACCENT);
-			g.text(f, rows[i][1], x + 6 + f.width(rows[i][0] + "  "), y + 4 + i * 11, TEXT);
+		for (int i = 0; i < rows.size(); i++) {
+			String[] r = rows.get(i);
+			g.text(f, r[0], x + 6, y + 4 + i * 11, ACCENT);
+			g.text(f, r[1], x + 6 + f.width(r[0] + "  "), y + 4 + i * 11, TEXT);
 		}
+		return y + h;
+	}
+
+	// ------------------------------------------------------------------ Trank-Effekte
+	private static void effects(GuiGraphicsExtractor g, Minecraft mc, LocalPlayer p, int y) {
+		Font f = mc.font;
+		for (MobEffectInstance e : p.getActiveEffects()) {
+			String name = e.getEffect().value().getDisplayName().getString();
+			if (e.getAmplifier() > 0) name += " " + roman(e.getAmplifier() + 1);
+			String time;
+			if (e.isInfiniteDuration()) time = "∞";
+			else { int sec = e.getDuration() / 20; time = sec / 60 + ":" + String.format("%02d", sec % 60); }
+			int col = 0xFF000000 | e.getEffect().value().getColor();
+			int w = f.width(name + "  " + time) + 10;
+			g.fill(4, y, 4 + w, y + 13, BOX);
+			g.fill(4, y, 6, y + 13, col);
+			g.text(f, name, 10, y + 3, TEXT);
+			g.text(f, time, 10 + f.width(name + "  "), y + 3, e.endsWithin(200) ? 0xFFFF5A5A : ACCENT);
+			y += 15;
+		}
+	}
+
+	private static String roman(int n) {
+		String[] r = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
+		return n < r.length ? r[n] : String.valueOf(n);
+	}
+
+	/** Merkt sich beim Sterben die Koordinaten (wird jeden Tick aufgerufen). */
+	private static boolean wasDead;
+	public static void trackDeath(Minecraft mc) {
+		LocalPlayer p = mc.player;
+		if (p == null) { wasDead = false; return; }
+		boolean dead = p.isDeadOrDying();
+		if (dead && !wasDead) {
+			CosmeticsConfig c = CosmeticsConfig.get();
+			String dim = p.level().dimension().identifier().getPath().replace("the_", "");
+			c.lastDeath = (int) Math.floor(p.getX()) + " " + (int) Math.floor(p.getY()) + " " + (int) Math.floor(p.getZ()) + " (" + dim + ")";
+			c.save();
+		}
+		wasDead = dead;
 	}
 
 	private static String direction(float yaw) {
@@ -103,6 +159,15 @@ public final class HudOverlays {
 			if (!st.isEmpty()) {
 				g.item(st, x, y);
 				g.itemDecorations(mc.font, st, x, y);
+				if (slot == EquipmentSlot.MAINHAND && CosmeticsConfig.get().itemCounter && st.isStackable()) {
+					int total = 0;
+					for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+						ItemStack o = p.getInventory().getItem(i);
+						if (ItemStack.isSameItemSameComponents(o, st)) total += o.getCount();
+					}
+					String t = "×" + total;
+					g.text(mc.font, t, x - mc.font.width(t) - 3, y + 5, ACCENT);
+				}
 				if (st.isDamageableItem()) {
 					int left = st.getMaxDamage() - st.getDamageValue();
 					String t = String.valueOf(left);

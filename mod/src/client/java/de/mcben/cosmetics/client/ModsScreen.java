@@ -21,20 +21,24 @@ public class ModsScreen extends Screen {
 	@Override
 	protected void init() {
 		CosmeticsConfig c = CosmeticsConfig.get();
-		int w = 180, gap = 24, top = height / 2 - 90;
+		int w = 180, gap = 22, top = height / 2 - 100;
 		int xl = width / 2 - w - 6, xr = width / 2 + 6;
 		toggle(xl, top, w, "Fullbright (G)", () -> c.fullbright, v -> c.fullbright = v);
 		toggle(xl, top + gap, w, "Zoom (C halten)", () -> c.zoom, v -> c.zoom = v);
 		slider(xl, top + 2 * gap, w, "Zoom-Stärke", c.zoomFactor, 2f, 10f, v -> c.zoomFactor = v, v -> Math.round(v * 10) / 10f + "x");
 		toggle(xl, top + 3 * gap, w, "Auto-Sprint", () -> c.autoSprint, v -> c.autoSprint = v);
 		toggle(xl, top + 4 * gap, w, "Info (FPS, Ping, XYZ)", () -> c.infoHud, v -> c.infoHud = v);
+		toggle(xl, top + 5 * gap, w, "Uhrzeit + MC-Zeit", () -> c.clockHud, v -> c.clockHud = v);
+		toggle(xl, top + 6 * gap, w, "Letzter Tod (Koords)", () -> c.deathCoords, v -> c.deathCoords = v);
 		toggle(xr, top, w, "Keystrokes + CPS", () -> c.keystrokes, v -> c.keystrokes = v);
-		toggle(xr, top + gap, w, "Rüstungs-Anzeige", () -> c.armorHud, v -> c.armorHud = v);
-		toggle(xr, top + 2 * gap, w, "Low Fire", () -> c.lowFire, v -> c.lowFire = v);
-		slider(xr, top + 3 * gap, w, "Feuer tiefer", c.fireOffset, 0f, 0.4f, v -> c.fireOffset = v, v -> Math.round(v * 250) + " %");
-		toggle(xr, top + 4 * gap, w, "Low Shield", () -> c.lowShield, v -> c.lowShield = v);
-		slider(xr, top + 5 * gap, w, "Schild tiefer", c.shieldOffset, 0f, 0.4f, v -> c.shieldOffset = v, v -> Math.round(v * 250) + " %");
-		addRenderableWidget(Button.builder(Component.literal("Fertig"), b -> onClose()).bounds(width / 2 - 100, top + 6 * gap + 14, 200, 20).build());
+		toggle(xr, top + gap, w, "Trank-Effekte", () -> c.effectsHud, v -> c.effectsHud = v);
+		toggle(xr, top + 2 * gap, w, "Rüstungs-Anzeige", () -> c.armorHud, v -> c.armorHud = v);
+		toggle(xr, top + 3 * gap, w, "Item-Zähler", () -> c.itemCounter, v -> c.itemCounter = v);
+		toggle(xr, top + 4 * gap, w, "Low Fire", () -> c.lowFire, v -> c.lowFire = v);
+		slider(xr, top + 5 * gap, w, "Feuer tiefer", c.fireOffset, 0f, 0.4f, v -> c.fireOffset = v, v -> Math.round(v * 250) + " %");
+		toggle(xr, top + 6 * gap, w, "Low Shield", () -> c.lowShield, v -> c.lowShield = v);
+		slider(xr, top + 7 * gap, w, "Schild tiefer", c.shieldOffset, 0f, 0.4f, v -> c.shieldOffset = v, v -> Math.round(v * 250) + " %");
+		addRenderableWidget(Button.builder(Component.literal("Fertig"), b -> onClose()).bounds(width / 2 - 100, top + 8 * gap + 6, 200, 20).build());
 	}
 
 	private void toggle(int x, int y, int w, String name, Supplier<Boolean> get, Consumer<Boolean> set) {
@@ -60,7 +64,7 @@ public class ModsScreen extends Screen {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		super.extractRenderState(g, mouseX, mouseY, delta);
-		g.centeredText(font, title, width / 2, height / 2 - 108, 0xFFFF6CF5);
+		g.centeredText(font, title, width / 2, height / 2 - 114, 0xFFFF6CF5);
 	}
 
 	@Override

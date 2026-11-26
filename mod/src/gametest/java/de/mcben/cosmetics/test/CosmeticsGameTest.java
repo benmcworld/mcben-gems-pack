@@ -62,8 +62,16 @@ public class CosmeticsGameTest implements FabricClientGameTest {
 			sp.getServer().runCommand("item replace entity @a armor.feet with iron_boots");
 			sp.getServer().runCommand("item replace entity @a weapon.mainhand with diamond_sword");
 			ctx.runOnClient(mc -> { CosmeticsConfig c = CosmeticsConfig.get(); c.infoHud = true; c.keystrokes = true; c.armorHud = true; });
+			sp.getServer().runCommand("give @a arrow 100");
+			sp.getServer().runCommand("item replace entity @a weapon.mainhand with arrow 16");
+			sp.getServer().runCommand("effect give @a speed 95 1");
+			sp.getServer().runCommand("effect give @a strength 8 0");
+			sp.getServer().runCommand("effect give @a night_vision infinite 0 true");
+			ctx.runOnClient(mc -> CosmeticsConfig.get().lastDeath = "120 64 -340 (overworld)");
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("11_anzeigen");
+			sp.getServer().runCommand("effect clear @a");
+			sp.getServer().runCommand("item replace entity @a weapon.mainhand with diamond_sword");
 
 			// Zoom
 			ctx.runOnClient(mc -> McBenCosmeticsClient.forceZoom = true);

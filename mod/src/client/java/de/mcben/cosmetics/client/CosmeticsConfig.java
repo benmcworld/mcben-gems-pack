@@ -34,6 +34,11 @@ public class CosmeticsConfig {
 	public float fireOffset = 0.15f;     // 0 .. 0.4 (nach unten)
 	public boolean lowShield = true;
 	public float shieldOffset = 0.1f;    // 0 .. 0.4 (Bloecke nach unten)
+	public boolean clockHud = true;
+	public boolean effectsHud = true;
+	public boolean itemCounter = true;
+	public boolean deathCoords = true;
+	public String lastDeath = "";
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static CosmeticsConfig instance;

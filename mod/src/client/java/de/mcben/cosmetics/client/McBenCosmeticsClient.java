@@ -43,6 +43,7 @@ public class McBenCosmeticsClient implements ClientModInitializer {
 				c.save();
 			}
 			autoSprint(mc);
+			HudOverlays.trackDeath(mc);
 		});
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "overlays"), (g, delta) -> HudOverlays.render(g));
 		LivingEntityRenderLayerRegistrationCallback.EVENT.register((type, renderer, helper, ctx) -> {
