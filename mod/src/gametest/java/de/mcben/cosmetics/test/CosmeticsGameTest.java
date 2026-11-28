@@ -1,18 +1,18 @@
 package de.mcben.cosmetics.test;
 
 import de.mcben.cosmetics.client.CosmeticsConfig;
-import de.mcben.cosmetics.client.MainMenuScreen;
-import de.mcben.cosmetics.client.McBenCosmeticsClient;
-import de.mcben.cosmetics.client.ModsScreen;
+import de.mcben.cosmetics.client.HudEditorScreen;
+import de.mcben.cosmetics.client.HudLayout;
+import de.mcben.cosmetics.client.McBenScreen;
+import de.mcben.cosmetics.client.TotemGhosts;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.CameraType;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
-/** Erstellt eine Welt und fotografiert Cosmetics und Mods aus mehreren Blickwinkeln. */
+import java.util.LinkedHashMap;
+
+/** Erstellt eine Welt und fotografiert Menue, HUD-Editor, HUD-Varianten und Totem-Minimods. */
 public class CosmeticsGameTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
@@ -21,108 +21,100 @@ public class CosmeticsGameTest implements FabricClientGameTest {
 			sp.getServer().runCommand("weather clear");
 			sp.getServer().runCommand("tp @a ~ ~ ~ 180 10");
 			sp.getConnection().waitForChunksRender();
-			ctx.runOnClient(mc -> { CosmeticsConfig c = CosmeticsConfig.get(); c.infoHud = false; c.keystrokes = false; c.armorHud = false; });
+			ctx.runOnClient(mc -> {
+				CosmeticsConfig c = CosmeticsConfig.get();
+				c.hud = new LinkedHashMap<>();
+				c.wings = "galaxie"; c.theme = "lila"; c.flap = false; c.halo = false;
+				c.lastDeath = "120 64 -340 (overworld)";
+			});
 
-			shoot(ctx, "galaxie", "lila", false, "1_galaxie_lila");
-			shoot(ctx, "engel", "lila", true, "2_engel_heiligenschein");
-			shoot(ctx, "galaxie", "gruen", true, "3_galaxie_gruen");
-			shoot(ctx, "galaxie", "dark", false, "4_galaxie_dark");
-
-			// Plushie-Totem
-			sp.getServer().runCommand("give @a totem_of_undying");
-			ctx.runOnClient(mc -> { CosmeticsConfig.get().wings = "aus"; CosmeticsConfig.get().halo = false; });
-			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
-			ctx.waitTicks(10);
-			ctx.takeScreenshot("5_plushie_hand");
-			ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
-			ctx.waitTicks(5);
-			ctx.takeScreenshot("6_plushie_ich");
-			ctx.setScreen(() -> new InventoryScreen(net.minecraft.client.Minecraft.getInstance().player));
-			ctx.waitTicks(5);
-			ctx.takeScreenshot("7_plushie_inventar");
-			ctx.setScreen(() -> null);
-			ctx.runOnClient(mc -> mc.player.displayItemActivation(new ItemStack(Items.TOTEM_OF_UNDYING)));
-			ctx.waitTicks(12);
-			ctx.takeScreenshot("8_plushie_ausloesen");
-			ctx.waitTicks(40);
-
-			// Menues
-			ctx.setScreen(() -> new MainMenuScreen(null));
-			ctx.waitTicks(5);
-			ctx.takeScreenshot("9_menue_haupt");
-			ctx.setScreen(() -> new ModsScreen(null));
-			ctx.waitTicks(5);
-			ctx.takeScreenshot("10_menue_mods");
-			ctx.setScreen(() -> null);
-
-			// Anzeigen: Info, Keystrokes, Ruestung
+			// Ausruestung + Effekte, damit alle Anzeigen etwas zeigen
 			sp.getServer().runCommand("item replace entity @a armor.head with diamond_helmet");
 			sp.getServer().runCommand("item replace entity @a armor.chest with diamond_chestplate");
 			sp.getServer().runCommand("item replace entity @a armor.legs with iron_leggings");
 			sp.getServer().runCommand("item replace entity @a armor.feet with iron_boots");
 			sp.getServer().runCommand("item replace entity @a weapon.mainhand with diamond_sword");
-			ctx.runOnClient(mc -> { CosmeticsConfig c = CosmeticsConfig.get(); c.infoHud = true; c.keystrokes = true; c.armorHud = true; });
-			sp.getServer().runCommand("give @a arrow 100");
-			sp.getServer().runCommand("item replace entity @a weapon.mainhand with arrow 16");
+			sp.getServer().runCommand("give @a totem_of_undying 3");
 			sp.getServer().runCommand("effect give @a speed 95 1");
 			sp.getServer().runCommand("effect give @a strength 8 0");
-			sp.getServer().runCommand("effect give @a night_vision infinite 0 true");
-			ctx.runOnClient(mc -> CosmeticsConfig.get().lastDeath = "120 64 -340 (overworld)");
-			ctx.waitTicks(10);
-			ctx.takeScreenshot("11_anzeigen");
-			sp.getServer().runCommand("effect clear @a");
-			sp.getServer().runCommand("item replace entity @a weapon.mainhand with diamond_sword");
 
-			// Zoom
-			ctx.runOnClient(mc -> McBenCosmeticsClient.forceZoom = true);
+			ctx.waitTicks(20);
+			ctx.runOnClient(mc -> { mc.gui.toastManager().clear(); mc.gui.hud.getChat().clearMessages(false); });
+
+			// 1) Menue-Tabs
+			for (int i = 0; i < McBenScreen.TABS.length; i++) {
+				int tab = i;
+				ctx.setScreen(() -> new McBenScreen(null, tab));
+				ctx.waitTicks(4);
+				ctx.takeScreenshot("1_menue_" + i + "_" + McBenScreen.TABS[i].toLowerCase());
+			}
+			ctx.setScreen(() -> null);
+
+			// 2) Standard-HUD
 			ctx.waitTicks(5);
-			ctx.takeScreenshot("12_zoom");
-			ctx.runOnClient(mc -> McBenCosmeticsClient.forceZoom = false);
+			ctx.takeScreenshot("2_hud_standard");
 
-			// Fullbright bei Nacht
-			sp.getServer().runCommand("time set 18000");
-			sp.getServer().runCommand("tp @a ~ ~ ~ 180 60");
-			ctx.runOnClient(mc -> CosmeticsConfig.get().fullbright = false);
-			ctx.waitTicks(10);
-			ctx.takeScreenshot("13_nacht_ohne_fullbright");
-			ctx.runOnClient(mc -> CosmeticsConfig.get().fullbright = true);
-			ctx.waitTicks(10);
-			ctx.takeScreenshot("14_nacht_mit_fullbright");
-			ctx.runOnClient(mc -> CosmeticsConfig.get().fullbright = false);
-			sp.getServer().runCommand("time set 6000");
-			sp.getServer().runCommand("tp @a ~ ~ ~ 180 10");
+			// 3) HUD-Editor mit ausgewaehlter Anzeige
+			ctx.setScreen(() -> new HudEditorScreen(null));
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("3_hud_editor_leer");
+			ctx.setScreen(() -> new HudEditorScreen(null).select("fps"));
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("3_hud_editor");
+			ctx.setScreen(() -> null);
 
-			// Low Shield
-			sp.getServer().runCommand("item replace entity @a weapon.offhand with shield");
-			ctx.runOnClient(mc -> CosmeticsConfig.get().lowShield = false);
+			// 4) Nur Zahlen: Hintergrund unsichtbar, keine Beschriftung, Clean-Schrift
+			ctx.runOnClient(mc -> {
+				CosmeticsConfig c = CosmeticsConfig.get();
+				c.font = "clean";
+				for (HudLayout.Element e : HudLayout.ELEMENTS) { c.pos(e).bg = 0f; c.pos(e).label = false; }
+			});
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("4_hud_nur_zahlen_clean");
+
+			// 5) Alle Extras an, Rahmen-Stil, Mono-Schrift, Cyan, groesser verschoben
+			ctx.runOnClient(mc -> {
+				CosmeticsConfig c = CosmeticsConfig.get();
+				c.hud = new LinkedHashMap<>();
+				c.font = "clean_bold"; c.accent = "cyan"; c.boxStyle = "rahmen";
+				for (HudLayout.Element e : HudLayout.ELEMENTS) c.pos(e).on = true;
+				c.pos(HudLayout.byId("coords")).scale = 1.5f;
+				c.pos(HudLayout.byId("keys")).bg = 0.25f;
+			});
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("5_hud_alle_extras");
+			ctx.runOnClient(mc -> {
+				CosmeticsConfig c = CosmeticsConfig.get();
+				c.hud = new LinkedHashMap<>();
+				c.font = "minecraft"; c.accent = "lila"; c.boxStyle = "streifen";
+			});
+
+			// 6) Totem vorne halten
+			sp.getServer().runCommand("item replace entity @a weapon.mainhand with totem_of_undying");
+			ctx.runOnClient(mc -> { CosmeticsConfig.get().totemForward = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("15_schild_normal");
-			ctx.runOnClient(mc -> { CosmeticsConfig.get().lowShield = true; CosmeticsConfig.get().shieldOffset = 0.1f; });
+			ctx.takeScreenshot("6_totem_normal");
+			ctx.runOnClient(mc -> CosmeticsConfig.get().totemForward = true);
 			ctx.waitTicks(5);
-			ctx.takeScreenshot("16_schild_low");
+			ctx.takeScreenshot("7_totem_vorne");
 
-			// Low Fire
-			sp.getServer().runCommand("effect give @a fire_resistance 60 0 true");
-			sp.getServer().runOnServer(s -> s.getPlayerList().getPlayers().forEach(pl -> pl.igniteForSeconds(30)));
-			ctx.runOnClient(mc -> CosmeticsConfig.get().lowFire = false);
-			ctx.waitTicks(10);
-			ctx.takeScreenshot("17_feuer_normal");
-			ctx.runOnClient(mc -> { CosmeticsConfig.get().lowFire = true; CosmeticsConfig.get().fireOffset = 0.15f; });
+			// 7) Pop-Umriss (Test-Umriss vor dem Spieler)
+			ctx.runOnClient(mc -> { CosmeticsConfig c = CosmeticsConfig.get(); c.ghostTime = 3f; c.ghostColor = "gold"; TotemGhosts.spawnTestGhost(); });
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("8_pop_umriss_gold");
+			ctx.runOnClient(mc -> { CosmeticsConfig.get().ghostColor = "akzent"; TotemGhosts.spawnTestGhost(); });
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("9_pop_umriss_lila");
+
+			// 8) Echter Pop: Survival, Schaden -> Totem loest aus, von hinten fotografiert
+			ctx.runOnClient(mc -> CosmeticsConfig.get().ghostColor = "gold");
+			sp.getServer().runCommand("gamemode survival @a");
+			sp.getServer().runCommand("item replace entity @a weapon.offhand with totem_of_undying");
 			ctx.waitTicks(5);
-			ctx.takeScreenshot("18_feuer_low");
+			sp.getServer().runCommand("damage @p 100 minecraft:generic");
+			sp.getServer().runCommand("tp @p ~ ~ ~3.5 180 10");
+			ctx.waitTicks(6);
+			ctx.takeScreenshot("10_echter_pop");
 		}
-	}
-
-	private static void shoot(ClientGameTestContext ctx, String wings, String theme, boolean halo, String name) {
-		ctx.runOnClient(mc -> {
-			CosmeticsConfig c = CosmeticsConfig.get();
-			c.wings = wings; c.theme = theme; c.halo = halo; c.flap = false; c.brightness = 1.0f;
-			mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-		});
-		ctx.waitTicks(10);
-		ctx.takeScreenshot(name + "_hinten");
-		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
-		ctx.waitTicks(10);
-		ctx.takeScreenshot(name + "_vorne");
 	}
 }

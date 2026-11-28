@@ -6,7 +6,11 @@ Eigene Cosmetics für **Minecraft Java 26.3** mit **Fabric**. Läuft nur bei dir
 |---|---|
 | **Flügel** | Runde 3D-Federflügel aus Blender: *Galaxie-Federn* (in 6 Farben) oder *Engel*. Leuchtende Spitzen, Flügelschlag. |
 | **Heiligenschein** | Leuchtender Ring über dem Kopf, schwebt und dreht sich langsam. |
-| **Mods-Menü** | Fullbright (G), Zoom (C halten, Stärke einstellbar), Auto-Sprint, Info-Anzeige (FPS, Ping, XYZ, Richtung), Keystrokes mit CPS, Rüstungs-Anzeige mit Haltbarkeit, Low Fire und Low Shield mit Höhen-Regler. |
+| **Mods** | Fullbright (G), Zoom (C halten, Stärke einstellbar), Auto-Sprint, Low Fire und Low Shield mit Höhen-Regler, Item-Zähler, Todespunkt merken. |
+| **HUD (20 Anzeigen)** | FPS, Ping, Koordinaten, Richtung, Uhrzeit, MC-Zeit + Tag, letzter Tod, Keystrokes, Effekte, Rüstung, Totems + Pops, Gegner-HP, CPS, Reach, Combo, Tempo, Biom, Lichtlevel, Nether-XZ, RAM. Jede einzeln an/aus. |
+| **HUD-Editor** | Jede Anzeige mit der Maus **verschieben**, mit dem Mausrad **größer/kleiner**, Rechtsklick = an/aus. Pro Anzeige: Größe, Hintergrund 0–100 % (0 % = nur die Zahlen), Textschatten, Beschriftung, eigene Farbe. |
+| **Design** | Schriftart (Minecraft, Clean, Clean Bold, Mono, Uniform), Akzentfarbe, Kästchen-Stil (Streifen, Rahmen, Unterstrich, Schlicht). |
+| **Totem-Minimods** | *Totem vorne halten* (Abstand und Größe einstellbar). *Pop-Umriss*: Beim Totem-Pop bleibt kurz ein flackernder, leuchtender Umriss stehen (bei dir und bei Gegnern, Farbe und Dauer einstellbar). *Pop-Nachricht* mit Pop-Zähler. |
 | **Plushie-Totem** | Das Totem der Unsterblichkeit wird ein rundes 3D-Plushie mit **deinem eigenen Skin** (oder dem Skin eines Spielernamens, den du einträgst). Im Inventar, in der Hand und beim Auslösen. |
 
 ## Installation
@@ -18,9 +22,9 @@ Eigene Cosmetics für **Minecraft Java 26.3** mit **Fabric**. Läuft nur bei dir
 
 ## Bedienen
 
-- **Taste K** öffnet das McBen-Menü mit **Cosmetics** und **Mods** (Tasten änderbar unter *Optionen → Steuerung*).
-- Cosmetics: Flügel (Aus / Galaxie / Engel), Farbe, Flügelschlag, Heiligenschein, Leuchtstärke, Plushie-Name.
-- Mods: alles einzeln an/aus, mit Reglern für Zoom-Stärke, Feuer- und Schild-Höhe.
+- **Taste K** öffnet das McBen-Menü mit den Tabs **Cosmetics, Mods, HUD, Totem, Design** (Tasten änderbar unter *Optionen → Steuerung*).
+- Im Tab **HUD** → *HUD-Editor öffnen*: Anzeigen ziehen, Mausrad für die Größe, anklicken für alle Einstellungen. Shift gedrückt halten = ohne Einrasten verschieben.
+- Bei Auswahl-Feldern (‹ … ›) blättert Linksklick vor und Rechtsklick zurück.
 - **G** schaltet Fullbright, **C** gedrückt halten zoomt.
 - **F5** drücken, um dich selbst von außen zu sehen.
 - Die Auswahl wird in `config/mcbencosmetics.json` gespeichert. Dort steht auch `plushieName`
@@ -38,5 +42,7 @@ Eigene Cosmetics für **Minecraft Java 26.3** mit **Fabric**. Läuft nur bei dir
 gradle build              # Mod-Datei in build/libs/
 gradle runClientGameTest  # startet Minecraft automatisch und macht Test-Screenshots
 ```
+
+Die Schriften Clean/Mono sind DejaVu Sans (freie Lizenz, siehe `assets/mcbencosmetics/font/dejavu_license.txt`).
 
 Die Modelle kommen aus Blender (`drafts/blender/export_wing.py`), die Texturen aus `drafts/blender/make_textures.py`.

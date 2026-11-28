@@ -8,6 +8,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /** Gespeicherte Auswahl (config/mcbencosmetics.json). */
 public class CosmeticsConfig {
@@ -27,18 +29,72 @@ public class CosmeticsConfig {
 	public boolean zoom = true;
 	public float zoomFactor = 4f;        // 2 .. 10
 	public boolean autoSprint = false;
-	public boolean infoHud = true;
-	public boolean keystrokes = true;
-	public boolean armorHud = true;
 	public boolean lowFire = true;
 	public float fireOffset = 0.15f;     // 0 .. 0.4 (nach unten)
 	public boolean lowShield = true;
 	public float shieldOffset = 0.1f;    // 0 .. 0.4 (Bloecke nach unten)
-	public boolean clockHud = true;
-	public boolean effectsHud = true;
 	public boolean itemCounter = true;
 	public boolean deathCoords = true;
 	public String lastDeath = "";
+
+	// ---- Totem-Minimods ----
+	public boolean totemForward = false;
+	public float totemForwardAmount = 0.6f;  // 0 .. 1 (wie weit zur Mitte/nach vorne)
+	public float totemSize = 1.0f;           // 0.5 .. 1.5
+	public boolean totemGhost = true;
+	public String ghostColor = "gold";
+	public float ghostTime = 1.2f;           // Sekunden
+	public boolean ghostOthers = true;
+	public boolean popMessage = true;
+
+	// ---- HUD / Design ----
+	public static final String[] FONTS = {"minecraft", "clean", "clean_bold", "mono", "uniform"};
+	public static final String[] ACCENTS = {"lila", "pink", "cyan", "gruen", "gold", "rot", "weiss"};
+	public static final String[] BOX_STYLES = {"streifen", "rahmen", "unterstrich", "schlicht"};
+	public static final String[] GHOST_COLORS = {"gold", "akzent", "weiss", "rot", "skin"};
+	public String font = "minecraft";
+	public String accent = "lila";
+	public String boxStyle = "streifen";
+	public Map<String, HudPos> hud = new LinkedHashMap<>();
+
+	/** Position und Aussehen einer HUD-Anzeige. ax/ay: 0 = links/oben, 1 = Mitte, 2 = rechts/unten. */
+	public static class HudPos {
+		public boolean on = true;
+		public float x, y;
+		public int ax, ay;
+		public float scale = 1f;
+		public float bg = 0.55f;
+		public boolean shadow = true;
+		public boolean label = true;
+		public String color = "auto";
+
+		public HudPos() {}
+		public HudPos(boolean on, int ax, int ay, float x, float y) {
+			this.on = on; this.ax = ax; this.ay = ay; this.x = x; this.y = y;
+		}
+	}
+
+	public HudPos pos(HudLayout.Element e) {
+		HudPos p = hud.get(e.id);
+		if (p == null) { p = e.defaults(); hud.put(e.id, p); }
+		return p;
+	}
+
+	public static int accentColor(String a) {
+		return switch (a) {
+			case "pink" -> 0xFFFF6CC4;
+			case "cyan" -> 0xFF5CE1FF;
+			case "gruen" -> 0xFF7DFF8A;
+			case "gold" -> 0xFFFFC94D;
+			case "rot" -> 0xFFFF5A5A;
+			case "weiss" -> 0xFFF2F2F2;
+			default -> 0xFFC77DFF;
+		};
+	}
+
+	public int accent() {
+		return accentColor(accent);
+	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static CosmeticsConfig instance;
@@ -95,8 +151,28 @@ public class CosmeticsConfig {
 			case "rot" -> "Rot";
 			case "dark" -> "Dark Edition";
 			case "gold" -> "Gold";
+			case "pink" -> "Pink";
+			case "cyan" -> "Cyan";
+			case "weiss" -> "Weiß";
+			case "akzent" -> "Akzentfarbe";
+			case "skin" -> "Eigener Skin";
+			case "minecraft" -> "Minecraft";
+			case "clean" -> "Clean";
+			case "clean_bold" -> "Clean Bold";
+			case "mono" -> "Mono";
+			case "uniform" -> "Uniform";
+			case "streifen" -> "Streifen";
+			case "rahmen" -> "Rahmen";
+			case "unterstrich" -> "Unterstrich";
+			case "schlicht" -> "Schlicht";
+			case "auto" -> "Auto";
 			default -> id;
 		};
+	}
+
+	public static String prev(String[] values, String current) {
+		for (int i = 0; i < values.length; i++) if (values[i].equals(current)) return values[(i + values.length - 1) % values.length];
+		return values[0];
 	}
 
 	public static String next(String[] values, String current) {

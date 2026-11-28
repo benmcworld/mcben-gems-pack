@@ -1,7 +1,16 @@
 {
-	"required": true,
-	"package": "de.mcben.cosmetics.client.mixin",
-	"compatibilityLevel": "JAVA_25",
-	"client": ["SpecialModelRenderersMixin", "LightmapMixin", "CameraMixin", "ScreenEffectRendererMixin", "FirstPersonHandsMixin"],
-	"injectors": {"defaultRequire": 1}
+  "required": true,
+  "package": "de.mcben.cosmetics.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "SpecialModelRenderersMixin",
+    "LightmapMixin",
+    "CameraMixin",
+    "ScreenEffectRendererMixin",
+    "FirstPersonHandsMixin",
+    "ClientPacketListenerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

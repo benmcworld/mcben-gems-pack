@@ -37,6 +37,7 @@ public class CosmeticsLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
 
 	@Override
 	public void submit(PoseStack poseStack, SubmitNodeCollector collector, int light, AvatarRenderState state, float yRot, float xRot) {
+		TotemGhosts.capturePose(state);
 		if (state.isInvisible || !isLocalPlayer(state)) return;
 		CosmeticsConfig cfg = CosmeticsConfig.get();
 		if (!"aus".equals(cfg.wings)) submitWings(poseStack, collector, light, state, cfg);
